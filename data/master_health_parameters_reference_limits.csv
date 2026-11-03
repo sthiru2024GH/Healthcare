@@ -1,0 +1,70 @@
+Category,Parameter Name,Standard Unit,Male Reference Limits,Female Reference Limits,Clinical Significance
+Complete Blood Count (CBC),Hemoglobin (Hb),g/dL,13.0 - 17.0,12.0 - 15.5,"Oxygen carrying capacity; Low = Anemia, High = Polycythemia"
+Complete Blood Count (CBC),Red Blood Cell Count (RBC),x10^6/mcL,4.5 - 5.9,4.0 - 5.2,Total circulating red blood cells
+Complete Blood Count (CBC),Hematocrit (HCT / PCV),%,40.0 - 52.0,36.0 - 47.0,Percentage volume of whole blood composed of RBCs
+Complete Blood Count (CBC),Mean Corpuscular Volume (MCV),fL,80.0 - 100.0,80.0 - 100.0,"Average volume/size of red cells; Low = Microcytic, High = Macrocytic"
+Complete Blood Count (CBC),Mean Corpuscular Hemoglobin (MCH),pg,27.0 - 33.0,27.0 - 33.0,Average amount of Hb per red blood cell
+Complete Blood Count (CBC),MCH Concentration (MCHC),g/dL,32.0 - 36.0,32.0 - 36.0,Average concentration of Hb in given volume of RBCs
+Complete Blood Count (CBC),Red Cell Distribution Width (RDW-CV),%,11.5 - 14.5,11.5 - 14.5,Variation in RBC size (Anisocytosis)
+Complete Blood Count (CBC),White Blood Cell Count (WBC),x10^3/mcL,4.0 - 11.0,4.0 - 11.0,"Total immune cells; Low = Leukopenia, High = Leukocytosis"
+Complete Blood Count (CBC),Neutrophils (%),%,40.0 - 70.0,40.0 - 70.0,First response to acute bacterial infections
+Complete Blood Count (CBC),Lymphocytes (%),%,20.0 - 45.0,20.0 - 45.0,Viral infection defence and antibody production
+Complete Blood Count (CBC),Monocytes (%),%,2.0 - 10.0,2.0 - 10.0,Chronic infection response and phagocytosis
+Complete Blood Count (CBC),Eosinophils (%),%,1.0 - 6.0,1.0 - 6.0,Allergic reactions and parasitic infections
+Complete Blood Count (CBC),Basophils (%),%,0.0 - 2.0,0.0 - 2.0,Inflammatory and hypersensitivity reactions
+Complete Blood Count (CBC),Absolute Neutrophil Count (ANC),/mcL,1500 - 7800,1500 - 7800,Absolute numerical count of circulating neutrophils
+Complete Blood Count (CBC),Absolute Lymphocyte Count (ALC),/mcL,1000 - 4800,1000 - 4800,Absolute numerical count of circulating lymphocytes
+Complete Blood Count (CBC),Platelet Count (PLT),x10^3/mcL,150.0 - 450.0,150.0 - 450.0,"Blood clotting cells; Low = Thrombocytopenia, High = Thrombocytosis"
+Complete Blood Count (CBC),Mean Platelet Volume (MPV),fL,7.5 - 11.5,7.5 - 11.5,Average size of platelets; reflects production rate
+HbA1c / Glycemia,HbA1c (Glycated Hemoglobin),%,< 5.7 (Normal),< 5.7 (Normal),"3-month average blood glucose level (5.7-6.4% = Prediabetes, >= 6.5% = Diabetes)"
+HbA1c / Glycemia,Estimated Average Glucose (eAG),mg/dL,< 117,< 117,Calculated average blood glucose corresponding to HbA1c
+Lipid Profile,Total Cholesterol,mg/dL,< 200 (Desirable),< 200 (Desirable),"Overall circulating cholesterol (200-239 = Borderline, >= 240 = High)"
+Lipid Profile,Triglycerides,mg/dL,< 150 (Normal),< 150 (Normal),"Circulating blood fat (150-199 = Borderline High, >= 200 = High)"
+Lipid Profile,HDL Cholesterol ('Good'),mg/dL,> 40 (Optimal),> 50 (Optimal),Protective cardio-vascular lipoprotein; higher levels lower heart disease risk
+Lipid Profile,LDL Cholesterol ('Bad'),mg/dL,< 100 (Optimal),< 100 (Optimal),Atherogenic lipoprotein; associated with arterial plaque build-up
+Lipid Profile,VLDL Cholesterol,mg/dL,2.0 - 30.0,2.0 - 30.0,Very low density lipoprotein carrying triglycerides
+Lipid Profile,Non-HDL Cholesterol,mg/dL,< 130,< 130,Total cholesterol minus HDL; marker for atherogenic particles
+Lipid Profile,Total / HDL Ratio,Ratio,< 5.0,< 4.4,Cardiovascular risk predictor ratio
+Comprehensive Metabolic Panel (CMP),Fasting Blood Glucose,mg/dL,70.0 - 99.0,70.0 - 99.0,Serum glucose level after fasting; 100-125 = Impaired Fasting Glucose
+Comprehensive Metabolic Panel (CMP),Serum Calcium,mg/dL,8.5 - 10.2,8.5 - 10.2,"Bone mineral metabolism, neuromuscular and nerve signal transmission"
+Comprehensive Metabolic Panel (CMP),Serum Sodium (Na),mEq/L,135.0 - 145.0,135.0 - 145.0,Primary extracellular electrolyte regulating fluid balance
+Comprehensive Metabolic Panel (CMP),Serum Potassium (K),mEq/L,3.5 - 5.0,3.5 - 5.0,Primary intracellular electrolyte regulating cardiac/muscle function
+Comprehensive Metabolic Panel (CMP),Serum Chloride (Cl),mEq/L,96.0 - 106.0,96.0 - 106.0,Major extracellular anion maintaining acid-base equilibrium
+Comprehensive Metabolic Panel (CMP),Carbon Dioxide / Bicarbonate (CO2),mEq/L,22.0 - 29.0,22.0 - 29.0,Assessment of systemic acid-base (pH) balance
+Liver Function Test (LFT),Alanine Aminotransferase (ALT/SGPT),U/L,7.0 - 56.0,7.0 - 35.0,Hepatocellular enzyme; indicator of acute liver cell damage
+Liver Function Test (LFT),Aspartate Aminotransferase (AST/SGOT),U/L,10.0 - 40.0,9.0 - 32.0,Enzyme present in liver and heart tissue; marker of tissue injury
+Liver Function Test (LFT),Alkaline Phosphatase (ALP),U/L,44.0 - 147.0,44.0 - 147.0,Enzyme associated with biliary tract and bone turnover
+Liver Function Test (LFT),Gamma-Glutamyl Transferase (GGT),U/L,0.0 - 51.0,0.0 - 33.0,Marker of biliary tract disease and heavy alcohol consumption
+Liver Function Test (LFT),Total Bilirubin,mg/dL,0.1 - 1.2,0.1 - 1.2,Breakdown product of hemoglobin; High = Jaundice/biliary obstruction
+Liver Function Test (LFT),Direct (Conjugated) Bilirubin,mg/dL,0.0 - 0.3,0.0 - 0.3,Water-soluble bilirubin processed by liver; high in biliary obstruction
+Liver Function Test (LFT),Indirect (Unconjugated) Bilirubin,mg/dL,0.2 - 0.8,0.2 - 0.8,Unprocessed bilirubin; elevated in hemolysis/Gilbert's syndrome
+Liver Function Test (LFT),Total Protein,g/dL,6.0 - 8.3,6.0 - 8.3,Total serum proteins combining albumin and globulin fractions
+Liver Function Test (LFT),Serum Albumin,g/dL,3.5 - 5.0,3.5 - 5.0,Major protein synthesized by liver; maintains oncotic pressure
+Liver Function Test (LFT),Serum Globulin,g/dL,2.0 - 3.5,2.0 - 3.5,Immunoglobulins and transport proteins
+Liver Function Test (LFT),Albumin / Globulin (A/G) Ratio,Ratio,1.1 - 2.5,1.1 - 2.5,Ratio evaluation for liver or kidney disorders
+Kidney Function Test (KFT),Blood Urea Nitrogen (BUN),mg/dL,6.0 - 20.0,6.0 - 20.0,Nitrogen waste product of protein metabolism cleared by kidneys
+Kidney Function Test (KFT),Serum Creatinine,mg/dL,0.7 - 1.3,0.6 - 1.1,Waste product of muscle breakdown; primary renal filtration marker
+Kidney Function Test (KFT),BUN / Creatinine Ratio,Ratio,10:1 - 20:1,10:1 - 20:1,"Differentiates prerenal, renal, and postrenal causes of uremia"
+Kidney Function Test (KFT),Estimated Glomerular Filtration Rate (eGFR),mL/min/1.73m2,> 90.0,> 90.0,Key indicator of overall kidney function (<60 indicates impaired function)
+Kidney Function Test (KFT),Serum Uric Acid,mg/dL,3.5 - 7.2,2.6 - 6.0,Purine metabolism waste product; High = Gout or renal impairment
+Kidney Function Test (KFT),Serum Phosphorus,mg/dL,2.5 - 4.5,2.5 - 4.5,Electrolyte regulated by kidney function and parathyroid hormone
+Thyroid Profile,Thyroid Stimulating Hormone (TSH),mIU/L,0.40 - 4.00,0.40 - 4.00,"Pituitary hormone stimulating thyroid; High = Hypothyroidism, Low = Hyperthyroidism"
+Thyroid Profile,Total Triiodothyronine (Total T3),ng/dL,80.0 - 200.0,80.0 - 200.0,Total circulating active thyroid hormone
+Thyroid Profile,Total Thyroxine (Total T4),mcg/dL,4.5 - 12.0,4.5 - 12.0,Total circulating pro-hormone produced by thyroid
+Thyroid Profile,Free Triiodothyronine (Free T3),pg/mL,2.0 - 4.4,2.0 - 4.4,Unbound bioactive T3 hormone
+Thyroid Profile,Free Thyroxine (Free T4),ng/dL,0.8 - 1.8,0.8 - 1.8,Unbound bioactive T4 hormone
+Urine Examination (Physical/Chemical),Urine Color,Qualitative,Pale Yellow to Amber,Pale Yellow to Amber,Visual inspection indicator of hydration and systemic compounds
+Urine Examination (Physical/Chemical),Urine Transparency / Appearance,Qualitative,Clear / Transparent,Clear / Transparent,"Turbidity may indicate infection, crystals, or cellular debris"
+Urine Examination (Physical/Chemical),Specific Gravity,Ratio,1.005 - 1.030,1.005 - 1.030,Urine concentration ability and patient hydration status
+Urine Examination (Physical/Chemical),Urine pH,pH Scale,4.6 - 8.0,4.6 - 8.0,Acid-base balance assessment of urine
+Urine Examination (Physical/Chemical),Urine Protein,Qualitative,Negative / Trace,Negative / Trace,Presence indicates potential glomerular or tubular renal damage
+Urine Examination (Physical/Chemical),Urine Glucose,Qualitative,Negative,Negative,Glucosuria occurs when serum glucose exceeds renal threshold (~180 mg/dL)
+Urine Examination (Physical/Chemical),Urine Ketones,Qualitative,Negative,Negative,"Indicates fat metabolism, diabetic ketoacidosis, or prolonged starvation"
+Urine Examination (Physical/Chemical),Urine Blood / Hemoglobin,Qualitative,Negative,Negative,"Hematuria; indicates trauma, infection, or renal tract stones"
+Urine Examination (Physical/Chemical),Urine Leukocyte Esterase,Qualitative,Negative,Negative,Enzyme from white blood cells; positive result indicates urinary tract infection (UTI)
+Urine Examination (Physical/Chemical),Urine Nitrites,Qualitative,Negative,Negative,Bacterial conversion of nitrate; positive result indicates bacterial UTI
+Urine Examination (Physical/Chemical),Urine Urobilinogen,mg/dL,0.2 - 1.0,0.2 - 1.0,Bilirubin metabolite; elevated in liver disease or hemolytic disorders
+Urine Examination (Physical/Chemical),Urine Bilirubin,Qualitative,Negative,Negative,Presence indicates conjugated hyperbilirubinemia or biliary obstruction
+Urine Examination (Microscopic),Microscopic Red Blood Cells (RBC),/HPF,0 - 3,0 - 3,"Red cells per high power field; elevated in trauma, UTI, or stones"
+Urine Examination (Microscopic),Microscopic White Blood Cells (WBC),/HPF,0 - 5,0 - 5,Pus cells per high power field; elevated in urinary tract inflammation/infection
+Urine Examination (Microscopic),Epithelial Cells,/HPF,0 - 5 (Few),0 - 5 (Few),Excess squamous cells indicate skin contamination during collection

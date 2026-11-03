@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>Prescriptions | MediPulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=14">
+  <script src="js/app.js?v=14" defer></script>
+</head>
+<body data-page="prescriptions">
+  <header class="app-header" data-app-header></header>
+  <main class="workspace-main master-main">
+    <div class="breadcrumb"><a href="dashboard.html">Workspace</a><span>/</span><span>Events</span><span>/</span><span>Prescriptions</span></div>
+    <div class="page-title-row"><div><span class="eyebrow">HEALTH EVENTS</span><h1>Prescriptions</h1><p>Record a prescription with its diagnosis advice and medications.</p></div></div>
+    <p class="master-access-note" data-rx-access-note hidden>View-only access. Only Patient profiles can record prescriptions.</p>
+    <section class="card symptom-card" data-rx-form-card hidden>
+      <h2 data-rx-heading>Add Prescription</h2>
+      <form class="symptom-form" data-rx-form novalidate>
+        <div class="symptom-row">
+          <label class="form-field">Practitioner<select name="practitionerId" required></select></label>
+          <label class="form-field">Date and time<input type="datetime-local" name="issuedAt" required></label>
+        </div>
+        <p class="rx-hint" data-rx-practitioner-hint hidden>No practitioners yet. <a href="practitioners.html">Add a practitioner</a> first.</p>
+        <label class="form-field">Notes<textarea name="notes" rows="3" maxlength="1000" placeholder="General notes (e.g., advice or instructions)..." required></textarea></label>
+        <div class="rx-section">
+          <div class="rx-section-head"><h3>Diagnosis advice <span>(tests from the Tests master)</span></h3></div>
+          <div data-rx-diagnoses></div>
+          <button type="button" class="button button-secondary button-compact" data-rx-add-diagnosis>+ Add diagnosis</button>
+          <p class="rx-hint">Test not listed? <a href="groups-master.html?group=tests">Add it to the Tests master</a> first, then pick it here.</p>
+        </div>
+        <div class="rx-section">
+          <div class="rx-section-head"><h3>Medications <span>(optional)</span></h3></div>
+          <div data-rx-medications></div>
+          <button type="button" class="button button-secondary button-compact" data-rx-add-medication>+ Add medication</button>
+        </div>
+        <p class="form-error" data-rx-error role="alert" hidden></p>
+        <div class="symptom-actions"><button type="button" class="button button-secondary" data-rx-cancel hidden>Cancel</button><button type="submit" class="button button-primary" data-rx-submit>Save prescription</button></div>
+      </form>
+    </section>
+    <section class="card directory-card">
+      <div class="directory-heading"><div><h2>Prescription history</h2><p>Most recent first.</p></div><span class="record-count" data-rx-count>0 prescriptions</span></div>
+      <div class="data-table-wrap"><table class="data-table"><thead><tr><th>DATE ISSUED</th><th>PRACTITIONER</th><th>DIAGNOSIS</th><th>MEDICATIONS</th><th>NOTES</th><th data-rx-actions-head>ACTIONS</th></tr></thead><tbody data-rx-body></tbody></table><div class="empty-state" data-rx-empty hidden><span>♡</span><b>No prescriptions recorded yet</b><p>Prescriptions you save will appear here.</p></div></div>
+      <div class="table-foot"><span>Saved in this browser only</span></div>
+    </section>
+    <p class="prototype-callout"><b>Prototype note:</b> Prescriptions are stored in local browser storage only. Not for clinical use.</p>
+  </main>
+  <footer class="app-footer"><span>© 2026 MediPulse · Demonstration prototype</span><span>Sample data only · Not for clinical use</span></footer>
+  <div class="toast-region" aria-live="polite"></div>
+</body>
+</html>

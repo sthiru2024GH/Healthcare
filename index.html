@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>MediPulse | Your health, at the heart of every visit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=14">
+  <script src="js/app.js?v=14" defer></script>
+</head>
+<body data-page="home">
+  <header class="site-header" data-site-header></header>
+  <main class="landing-main">
+    <section class="hero landing-hero">
+      <div class="hero-copy">
+        <span class="eyebrow"><span class="eyebrow-dot"></span> Your care, connected</span>
+        <h1>Your health is at the <span>heart of every visit.</span></h1>
+        <p class="hero-lede">A clear, connected space to stay on top of your appointments, care team, and the details that matter to your health.</p>
+        <div class="hero-actions">
+          <a class="button button-primary button-large" href="login.html?mode=signup&amp;role=Patient">Open your patient portal <span aria-hidden="true">→</span></a>
+          <a class="button button-secondary button-large" href="login.html?role=Patient">Sign in</a>
+        </div>
+        <div class="hero-proof"><span class="patient-proof-icon">♡</span><span>Care that keeps you at the center</span></div>
+      </div>
+      <div class="patient-illustration" role="img" aria-label="Patient-centered care, connected across appointments, care teams, and health records">
+        <div class="patient-orbit patient-orbit-outer"></div>
+        <div class="patient-orbit patient-orbit-inner"></div>
+        <div class="patient-heart"><span>♡</span><i></i></div>
+        <div class="care-point care-point-appointment"><span>▦</span>Appointments</div>
+        <div class="care-point care-point-team"><span>✳</span>Your care team</div>
+        <div class="care-point care-point-health"><span>＋</span>Your health</div>
+        <span class="illustration-spark spark-one">✳</span>
+        <span class="illustration-spark spark-two">✦</span>
+      </div>
+    </section>
+    <section class="landing-details" id="care">
+      <div class="section-heading">
+        <div><span class="eyebrow">Your health, supported</span><h2>Care works better, together.</h2></div>
+        <p>Stay connected with your care team and the people who support your health.</p>
+      </div>
+      <div class="portal-grid" id="portals">
+        <a class="portal-card patient-portal-card" href="login.html?role=Patient"><span class="portal-icon blue-icon">♡</span><h3>Patients</h3><p>Stay connected to appointments, care teams, and the details that matter to you.</p><span class="portal-link">Patient portal <b>→</b></span></a>
+        <a class="portal-card" href="login.html?role=Practitioner"><span class="portal-icon teal-icon">✳</span><h3>Practitioners</h3><p>Prepare for each visit and keep your day moving with a clear clinical workspace.</p><span class="portal-link">Practitioner portal <b>→</b></span></a>
+        <a class="portal-card" href="login.html?role=Care-giver"><span class="portal-icon violet-icon">⌂</span><h3>Care-givers</h3><p>Support the people in your care with a simpler, more joined-up experience.</p><span class="portal-link">Care-giver portal <b>→</b></span></a>
+        <a class="portal-card" href="login.html?role=Guest"><span class="portal-icon amber-icon">↗</span><h3>Guests & specialists</h3><p>Find a focused place to collaborate with a care team on a shared visit.</p><span class="portal-link">Guest access <b>→</b></span></a>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><a class="brand brand-small" href="index.html"><span class="brand-symbol">✳</span><span>MediPulse</span></a><span>Clinical clarity, connected.</span><span class="footer-clock"><span class="live-dot"></span> Local time <b data-clock>--:--:--</b></span><span class="demo-label">Demonstration prototype · no real patient data</span></footer>
+  <div class="toast-region" aria-live="polite"></div>
+</body>
+</html>

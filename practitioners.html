@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>Practitioners | MediPulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=14">
+  <script src="js/app.js?v=14" defer></script>
+</head>
+<body data-page="practitioners">
+  <header class="app-header" data-app-header></header>
+  <main class="workspace-main master-main">
+    <div class="breadcrumb"><a href="dashboard.html">Workspace</a><span>/</span><span>Practitioners</span></div>
+    <div class="page-title-row"><div><span class="eyebrow">YOUR CARE TEAM</span><h1>Practitioners</h1><p>Add the practitioners involved in your care. They are also listed in Groups master.</p></div></div>
+    <p class="master-access-note" data-practitioner-access-note hidden>View-only access. Only Patient profiles can add or remove practitioners.</p>
+    <section class="card symptom-card" data-practitioner-form-card hidden>
+      <h2 data-practitioner-heading>Add Practitioner</h2>
+      <form class="symptom-form" data-practitioner-form novalidate>
+        <label class="form-field">Medical Practice<select name="practiceId" required></select></label>
+        <label class="form-field">Specialization<select name="specializationId" required></select></label>
+        <label class="form-field">Name<input type="text" name="name" maxlength="120" placeholder="Dr. Smith" required></label>
+        <p class="form-error" data-practitioner-error role="alert" hidden></p>
+        <div class="symptom-actions"><button type="button" class="button button-secondary" data-practitioner-cancel hidden>Cancel</button><button type="submit" class="button button-primary" data-practitioner-submit>Save Practitioner</button></div>
+      </form>
+    </section>
+    <section class="card directory-card" data-practitioner-list-card>
+      <div class="directory-heading"><div><h2>Your practitioners</h2><p>Practitioners you have added.</p></div><span class="record-count" data-practitioner-count>0 practitioners</span></div>
+      <div class="data-table-wrap"><table class="data-table"><thead><tr><th>NAME</th><th>SPECIALIZATION</th><th>MEDICAL PRACTICE</th><th data-practitioner-actions-head>ACTIONS</th></tr></thead><tbody data-practitioner-body></tbody></table><div class="empty-state" data-practitioner-empty hidden><span>♡</span><b>No practitioners added yet</b><p>Practitioners you save will appear here.</p></div></div>
+      <div class="table-foot"><span>Saved in this browser only</span></div>
+    </section>
+    <p class="prototype-callout"><b>Prototype note:</b> Practitioner details are stored in local browser storage only. Not for clinical use.</p>
+  </main>
+  <footer class="app-footer"><span>© 2026 MediPulse · Demonstration prototype</span><span>Sample data only · Not for clinical use</span></footer>
+  <div class="toast-region" aria-live="polite"></div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+Category,Parameter Name,Standard Unit,Adult Male Limits,Adult Female Limits,Target / Clinical Thresholds,Clinical Significance
+Hemodynamics,Systolic Blood Pressure (SBP),mmHg,90 - 120 (Normal),90 - 120 (Normal),120-129 = Elevated; >=130 = Stage 1 Hypertension; >=140 = Stage 2 Hypertension,Measures pressure in arteries during heart muscle contraction
+Hemodynamics,Diastolic Blood Pressure (DBP),mmHg,60 - 80 (Normal),60 - 80 (Normal),80-89 = Stage 1 Hypertension; >=90 = Stage 2 Hypertension; <60 = Hypotension,Measures pressure in arteries when heart rests between beats
+Hemodynamics,Pulse Rate / Heart Rate (Resting),bpm,60 - 100,60 - 100,<60 = Bradycardia (unless athletic); >100 = Tachycardia,Number of heart contractions per minute at rest
+Blood Glucose,Fasting Blood Sugar (FBS),mg/dL,70 - 99 (Normal),70 - 99 (Normal),100-125 = Prediabetes; >=126 = Diabetes,Blood glucose level measured after minimum 8 hours of fasting
+Blood Glucose,Post-Prandial Blood Sugar (PPBS - 2 hrs),mg/dL,< 140 (Normal),< 140 (Normal),140-199 = Prediabetes / Impaired Glucose Tolerance; >=200 = Diabetes,Blood glucose level measured exactly 2 hours after starting a meal
+Blood Glucose,Random Blood Sugar (RBS),mg/dL,70 - 140,70 - 140,>=200 (with symptoms) indicates Diabetes,Blood glucose level measured at any unannounced time regardless of meals
+Body Composition,Body Mass Index (BMI),kg/m²,18.5 - 24.9 (Normal),18.5 - 24.9 (Normal),<18.5 = Underweight; 25.0-29.9 = Overweight; >=30.0 = Obesity,Ratio of body weight to height squared; estimates overall body fatness
+Body Composition,Waist Circumference,inches / cm,< 40 in (< 102 cm),< 35 in (< 88 cm),Elevated levels indicate central/visceral adiposity and higher metabolic risk,Measures visceral fat around abdominal organs
+Respiratory & Oxygen,Blood Oxygen Saturation (SpO2),%,95 - 100,95 - 100,90-94 = Mild Hypoxemia; <90 = Severe Hypoxemia (Requires clinical intervention),Percentage of oxygen-saturated hemoglobin relative to total hemoglobin
+Respiratory & Oxygen,Respiratory Rate (At Rest),breaths/min,12 - 20,12 - 20,<12 = Bradypnea; >20 = Tachypnea,Number of inhalation/exhalation cycles per minute
+Body Temperature,Body Temperature (Oral / Core),°F (°C),97.8 - 99.1 (36.5 - 37.3),97.8 - 99.1 (36.5 - 37.3),>= 100.4°F (38.0°C) = Fever (Pyrexia); > 103.0°F = High Fever; < 95.0°F = Hypothermia,Core thermal homeostatic state of the body
+Fluid Balance,Daily Fluid Intake,Liters (mL),3.0 - 3.7 L,2.0 - 2.7 L,"Varies by physical activity, climate, renal function, and cardiac history",Monitors systemic hydration status and kidney fluid clearance
+Fluid Balance,Daily Urine Output,mL/day,800 - 2000 mL,800 - 2000 mL,< 400 mL/day = Oliguria; > 2500 mL/day = Polyuria,Essential daily vital metric for monitoring kidney function and fluid retention
+Body Composition,Body Weight,kg,Varies with height (see BMI),Varies with height (see BMI),Track trends over time; sudden gain of >2 kg in 24 hrs may indicate fluid retention,Daily body weight for trend monitoring of nutrition and fluid status

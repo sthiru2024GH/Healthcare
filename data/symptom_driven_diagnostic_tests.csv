@@ -1,0 +1,29 @@
+Symptom / Presentation,Diagnostic Test Name,Category,Primary Purpose / Indication
+Unexplained Fatigue & Weakness,Complete Blood Count (CBC),Hematology,"Evaluate for anemia, active infection, or underlying hematologic disorders."
+Unexplained Fatigue & Weakness,Thyroid Stimulating Hormone (TSH),Endocrinology,Rule out hypothyroidism or hyperthyroidism as a metabolic cause of fatigue.
+Unexplained Fatigue & Weakness,Comprehensive Metabolic Panel (CMP),Biochemistry,"Assess kidney function, liver function, serum electrolytes, and blood glucose balance."
+"Fever, Chills & Night Sweats",Blood Cultures,Microbiology,"Detect bacteremia, fungemia, or systemic sepsis."
+"Fever, Chills & Night Sweats",C-Reactive Protein (CRP) & ESR,Inflammatory Markers,Quantify systemic inflammation or active autoimmune response.
+Unintentional Weight Loss,CT Scan of Abdomen and Pelvis,Radiology,"Screen for occult malignancy, chronic pancreatic disease, or intra-abdominal disease."
+Chest Pain / Pressure,12-Lead Electrocardiogram (ECG / EKG),Cardiology,"Identify acute myocardial infarction (STEMI/NSTEMI), ischemia, or arrhythmia."
+Chest Pain / Pressure,Serum Troponin I / T,Cardiac Biomarkers,Detect myocardial injury or active cardiac necrosis.
+Shortness of Breath (Dyspnea),Chest X-Ray (CXR),Radiology,"Evaluate for pneumonia, pulmonary edema, pleural effusion, or pneumothorax."
+Shortness of Breath (Dyspnea),N-Terminal Pro-BNP (NT-proBNP),Cardiac Biomarkers,Differentiate congestive heart failure (CHF) from pulmonary causes of dyspnea.
+Shortness of Breath (Dyspnea),D-Dimer Test,Coagulation / Vascular,Rule out acute pulmonary embolism (PE) or deep vein thrombosis (DVT).
+Chronic Cough & Hemoptysis,Sputum Culture & AFB Stain,Microbiology,Identify respiratory bacterial pathogens or Mycobacterium tuberculosis.
+Severe Abdominal Pain,Abdominal Ultrasound,Radiology,"Detect gallstones (cholelithiasis), acute cholecystitis, or appendicitis."
+Severe Abdominal Pain,Serum Lipase & Amylase,Biochemistry,Diagnose acute pancreatitis.
+Jaundice (Yellowing of Eyes/Skin),Liver Function Test (LFT),Biochemistry,"Evaluate hepatic enzymes (ALT, AST, ALP) and bilirubin fractions for hepatobiliary injury."
+Persistent Diarrhea & Abdominal Cramps,"Stool Culture, Ova & Parasites (O&P)",Microbiology,"Identify gastrointestinal bacterial pathogens (e.g., Salmonella, Shigella) or parasites."
+Rectal Bleeding / Black Tarry Stool (Melena),Esophagogastroduodenoscopy (EGD / Upper Endoscopy),Gastroenterology,"Identify upper GI bleeding sources such as peptic ulcers, gastritis, or esophageal varices."
+Rectal Bleeding / Black Tarry Stool (Melena),Colonoscopy,Gastroenterology,"Visualize lower GI tract for colorectal polyps, inflammatory bowel disease (IBD), or malignancy."
+Severe Sudden Headache ('Thunderclap'),Non-Contrast CT Head,Neuroradiology,"Rule out acute subarachnoid hemorrhage, intracranial hemorrhage, or acute stroke."
+Focal Weakness / Numbness / Slurred Speech,Brain MRI with Diffusion-Weighted Imaging (DWI),Neuroradiology,Identify early acute ischemic stroke or demyelinating lesions (Multiple Sclerosis).
+Dizziness / Vertigo,Electronystagmography (ENG) / VNG,Otoneurology,"Differentiate peripheral vestibular disorders (e.g., BPPV) from central brainstem disorders."
+Seizures / Altered Mental Status,Electroencephalogram (EEG),Neurophysiology,Detect abnormal cortical electrical activity and evaluate for epilepsy.
+"Dysuria, Urinary Frequency & Urgency",Urinalysis with Microscopic Examination,Urology,"Detect leukocytes, nitrites, protein, or bacteria indicative of a urinary tract infection (UTI)."
+Flank Pain & Hematuria,"Non-Contrast CT KUB (Kidney, Ureter, Bladder)",Radiology,Diagnose nephrolithiasis (kidney stones) and assess for urinary tract obstruction.
+Peripheral Edema (Swelling in Legs/Ankles),Kidney Function Test (Serum Creatinine & BUN),Nephrology,Assess renal filtration efficiency and screen for acute kidney injury or chronic renal disease.
+"Joint Swelling, Stiffness & Pain",Rheumatoid Factor (RF) & Anti-CCP Antibodies,Rheumatology,Diagnose autoimmune inflammatory arthritis (Rheumatoid Arthritis).
+"Joint Swelling, Stiffness & Pain",Serum Uric Acid,Biochemistry,Evaluate for hyperuricemia associated with acute gouty arthritis.
+Excessive Thirst (Polydipsia) & Frequent Urination (Polyuria),Fasting Blood Glucose & HbA1c,Endocrinology,Diagnose Diabetes Mellitus or prediabetes.
