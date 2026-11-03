@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>Lab Tests | MediPulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=14">
+  <script src="js/app.js?v=14" defer></script>
+</head>
+<body data-page="labtests">
+  <header class="app-header" data-app-header></header>
+  <main class="workspace-main master-main">
+    <div class="page-title-row"><div><span class="eyebrow">PATIENT HOME</span><h1>My Dashboard</h1></div></div>
+    <nav class="tab-strip" aria-label="Health sections"><a href="symptoms.html">Symptoms</a><a href="prescriptions.html">Prescriptions</a><a href="dashboard.html">Medications</a><a href="interventions.html">Interventions</a><a href="vitals.html">Vitals</a><a href="labtests.html" class="is-current">Lab Tests</a><span>Analytics</span><span>Advanced Analytics</span></nav>
+    <div class="vital-top"><button type="button" class="button button-primary" data-log-lab>+ Log Lab Test</button></div>
+    <section class="card med-card">
+      <div class="med-log-head"><h2>Lab Test Reports</h2><div class="log-date"><label>From<input type="date" data-lab-from></label><label>To<input type="date" data-lab-to></label></div></div>
+      <div data-lab-list></div>
+      <div class="empty-state" data-lab-empty hidden><span>♡</span><b>No lab tests recorded yet</b><p>Use + Log Lab Test to record results.</p></div>
+    </section>
+    <p class="prototype-callout"><b>Prototype note:</b> Lab results are stored in local browser storage only. Not for clinical use. Facilities come from the <a href="groups-master.html?group=facilities">Facilities master</a>; tests and parameters from the <a href="groups-master.html?group=parameters">Health parameters master</a>.</p>
+  </main>
+  <dialog class="record-dialog rx-dialog" data-lab-dialog>
+    <form class="record-form" data-lab-form novalidate>
+      <h2 data-lab-heading>Log Lab Test</h2>
+      <div class="symptom-form">
+        <div class="lab-top">
+          <label class="form-field">Facility<select name="facilityId" required data-lab-facility></select></label>
+          <label class="form-field">Test name<select name="testId" required data-lab-test></select></label>
+          <label class="form-field">Recorded at<input type="datetime-local" name="recordedAt" required></label>
+          <label class="form-field">Requested by<select name="requestedBy" data-lab-requester></select></label>
+          <label class="form-field" data-lab-rx-field hidden>Requested diagnosis (prescription)<select name="prescriptionId" data-lab-rx></select></label>
+        </div>
+        <div class="rx-section">
+          <div class="rx-section-head"><h3>Parameters <span>(enter the values you have)</span></h3></div>
+          <div data-lab-params><p class="muted-note">Select a test to list its parameters.</p></div>
+        </div>
+        <p class="form-error" data-lab-error role="alert" hidden></p>
+        <div class="symptom-actions"><button type="button" class="button button-secondary" data-lab-cancel>Cancel</button><button type="submit" class="button button-primary">Save lab test</button></div>
+      </div>
+    </form>
+  </dialog>
+  <footer class="app-footer"><span>© 2026 MediPulse · Demonstration prototype</span><span>Sample data only · Not for clinical use</span></footer>
+  <div class="toast-region" aria-live="polite"></div>
+</body>
+</html>

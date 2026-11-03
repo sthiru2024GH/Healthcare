@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>Interventions | MediPulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=14">
+  <script src="js/app.js?v=14" defer></script>
+</head>
+<body data-page="interventions">
+  <header class="app-header" data-app-header></header>
+  <main class="workspace-main master-main">
+    <div class="breadcrumb"><a href="dashboard.html">Workspace</a><span>/</span><span>Events</span><span>/</span><span>Interventions</span></div>
+    <div class="page-title-row"><div><span class="eyebrow">HEALTH EVENTS</span><h1>Interventions</h1><p>Record an intervention prescription from a practitioner, with one or more interventions.</p></div></div>
+    <p class="master-access-note" data-iv-access-note hidden>View-only access. Only Patient profiles can record interventions.</p>
+    <section class="card symptom-card" data-iv-form-card hidden>
+      <h2 data-iv-heading>Add Intervention Prescription</h2>
+      <form class="symptom-form" data-iv-form novalidate>
+        <div class="symptom-row">
+          <label class="form-field">Practitioner<select name="practitionerId" required></select></label>
+          <label class="form-field">Date and time<input type="datetime-local" name="issuedAt" required></label>
+        </div>
+        <p class="rx-hint" data-iv-practitioner-hint hidden>No practitioners yet. <a href="practitioners.html">Add a practitioner</a> first.</p>
+        <label class="form-field">Notes<textarea name="notes" rows="3" maxlength="1000" placeholder="General notes (e.g., reason or instructions)..." required></textarea></label>
+        <div class="rx-section">
+          <div class="rx-section-head"><h3>Interventions <span>(from the Intervention Method master)</span></h3></div>
+          <div data-iv-items></div>
+          <button type="button" class="button button-secondary button-compact" data-iv-add>+ Add intervention</button>
+          <p class="rx-hint">Method not listed? <a href="groups-master.html?group=interventionMethods">Add it to the Intervention Method master</a> first, then pick it here.</p>
+        </div>
+        <p class="form-error" data-iv-error role="alert" hidden></p>
+        <div class="symptom-actions"><button type="button" class="button button-secondary" data-iv-cancel hidden>Cancel</button><button type="submit" class="button button-primary" data-iv-submit>Save prescription</button></div>
+      </form>
+    </section>
+    <section class="card directory-card">
+      <div class="directory-heading"><div><h2>Intervention history</h2><p>Most recent first.</p></div><span class="record-count" data-iv-count>0 prescriptions</span></div>
+      <div class="data-table-wrap"><table class="data-table"><thead><tr><th>DATE ISSUED</th><th>PRACTITIONER</th><th>INTERVENTIONS</th><th>NOTES</th><th data-iv-actions-head>ACTIONS</th></tr></thead><tbody data-iv-body></tbody></table><div class="empty-state" data-iv-empty hidden><span>♡</span><b>No interventions recorded yet</b><p>Intervention prescriptions you save will appear here.</p></div></div>
+      <div class="table-foot"><span>Saved in this browser only</span></div>
+    </section>
+    <p class="prototype-callout"><b>Prototype note:</b> Interventions are stored in local browser storage only. Not for clinical use.</p>
+  </main>
+  <footer class="app-footer"><span>© 2026 MediPulse · Demonstration prototype</span><span>Sample data only · Not for clinical use</span></footer>
+  <div class="toast-region" aria-live="polite"></div>
+</body>
+</html>

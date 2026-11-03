@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>Groups master | MediPulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=14">
+  <script src="js/app.js?v=14" defer></script>
+</head>
+<body data-page="groups">
+  <header class="app-header" data-app-header></header>
+  <main class="workspace-main master-main">
+    <div class="breadcrumb"><a href="dashboard.html">Workspace</a><span>/</span><span>Groups master</span></div>
+    <div class="page-title-row"><div><span class="eyebrow">CLINICAL CONFIGURATION</span><h1>Groups master</h1><p>Manage the shared directories and definitions used across your workspace.</p></div><div class="title-actions"><label class="button button-secondary" data-import-vitals hidden>Import vitals CSV<input type="file" accept=".csv,text/csv" data-vitals-file hidden></label><label class="button button-secondary" data-import-symptoms hidden>Import symptoms CSV<input type="file" accept=".csv,text/csv" data-symptoms-file hidden></label><button class="button button-primary" data-action="add-record" hidden>＋ Add record</button></div></div>
+    <p class="master-access-note" data-master-access-note hidden>View-only access. Only Patient profiles can add, edit, or delete demo records.</p>
+    <div class="master-summary"><div class="master-summary-item"><span class="summary-icon teal-icon">▤</span><span><small>DIRECTORIES</small><b><span data-group-total>08</span> <i>canonical groups</i></b></span></div><div class="master-summary-item"><span class="summary-icon green-icon">✓</span><span><small>REFERENTIAL INTEGRITY</small><b><span data-orphan-count>0</span> <i>orphaned keys</i></b></span></div><div class="master-summary-item"><span class="summary-icon blue-icon">◷</span><span><small>LAST UPDATED</small><b data-last-updated>Just now <i>in this browser</i></b></span></div><div class="summary-note"><span class="live-dot"></span> Demo data stored locally</div></div>
+    <section class="card directory-card">
+      <div class="directory-heading"><div><h2>Canonical directories</h2><p>Select a directory to review and manage its records.</p></div></div>
+      <div class="directory-tabs" role="tablist" aria-label="Master data groups" data-directory-tabs></div>
+      <div class="table-toolbar"><div class="search-wrap"><span aria-hidden="true">⌕</span><input type="search" data-record-search placeholder="Search records..." aria-label="Search records"></div><label class="select-filter"><span class="sr-only">Filter by status</span><select data-status-filter><option value="all">All statuses</option><option value="active">Active</option><option value="draft">Draft</option><option value="staged">Staged</option></select></label><label class="select-filter" data-category-filter hidden><span class="sr-only">Filter by test category</span><select data-category-select aria-label="Filter by test category"><option value="">All test categories</option></select></label><span class="record-count" data-record-count>0 records</span></div>
+      <div class="data-table-wrap"><table class="data-table"><thead data-table-head></thead><tbody data-table-body></tbody></table><div class="empty-state" data-empty-state hidden><span>⌕</span><b>No matching records</b><p>Try a different search or add a new record.</p></div></div>
+      <div class="table-foot"><span>Showing demo records · Changes are saved in this browser</span><span class="table-foot-integrity"><span class="live-dot"></span> Referential links checked</span></div>
+    </section>
+    <p class="prototype-callout"><b>Prototype note:</b> These directories use fictional sample data and local browser storage only. They are not connected to a clinical system.</p>
+  </main>
+  <footer class="app-footer"><span>© 2026 MediPulse · Demonstration prototype</span><span>Sample data only · Not for clinical use</span></footer>
+  <dialog class="record-dialog" data-record-dialog aria-labelledby="record-dialog-title"><form method="dialog" class="dialog-close-form"><button class="dialog-close" aria-label="Close dialog">×</button></form><div class="dialog-kicker" data-dialog-kicker>MASTER DIRECTORY</div><h2 id="record-dialog-title">Add record</h2><p class="dialog-description" data-dialog-description>Enter the record details below.</p><form class="record-form" data-record-form><div class="record-form-fields" data-record-form-fields></div><p class="form-error" data-record-error role="alert" hidden></p><div class="dialog-actions"><button type="button" class="button button-secondary" data-action="close-record-dialog">Cancel</button><button type="submit" class="button button-primary"><span data-record-submit>Save record</span></button></div></form></dialog>
+  <div class="toast-region" aria-live="polite"></div>
+</body>
+</html>

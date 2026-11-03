@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>Vitals | MediPulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=14">
+  <script src="js/app.js?v=14" defer></script>
+</head>
+<body data-page="vitals">
+  <header class="app-header" data-app-header></header>
+  <main class="workspace-main master-main">
+    <div class="page-title-row"><div><span class="eyebrow">PATIENT HOME</span><h1>My Dashboard</h1></div></div>
+    <nav class="tab-strip" aria-label="Health sections"><a href="symptoms.html">Symptoms</a><a href="prescriptions.html">Prescriptions</a><a href="dashboard.html">Medications</a><a href="interventions.html">Interventions</a><a href="vitals.html" class="is-current">Vitals</a><a href="labtests.html">Lab Tests</a><span>Analytics</span><span>Advanced Analytics</span></nav>
+    <div class="vital-top"><button type="button" class="button button-primary" data-log-vitals>+ Log Vitals</button></div>
+    <div class="vital-stats">
+      <div class="card vital-stat"><strong data-stat-bp>--</strong><span>LAST BLOOD PRESSURE</span></div>
+      <div class="card vital-stat"><strong data-stat-hr>--</strong><span>LAST HEART RATE</span></div>
+      <div class="card vital-stat"><strong data-stat-sugar>--</strong><span>LAST BLOOD SUGAR</span></div>
+      <div class="card vital-stat"><strong data-stat-weight>--</strong><span>LAST WEIGHT (KG)</span></div>
+    </div>
+    <section class="card med-card">
+      <div class="med-log-head"><h2>Recent Vitals</h2><div class="log-date"><label>From<input type="date" data-vital-from></label><label>To<input type="date" data-vital-to></label></div></div>
+      <div data-vital-list></div>
+      <div class="empty-state" data-vital-empty hidden><span>♡</span><b>No vitals recorded yet</b><p>Use + Log Vitals to record a reading.</p></div>
+    </section>
+    <p class="prototype-callout"><b>Prototype note:</b> Vitals are stored in local browser storage only. Not for clinical use. Vitals come from the <a href="groups-master.html?group=vitals">Vitals group master</a>; add any missing vital (e.g. Weight) there first.</p>
+  </main>
+  <dialog class="record-dialog" data-vital-dialog>
+    <form class="record-form" data-vital-form novalidate>
+      <h2 data-vital-heading>Log Vitals</h2>
+      <div class="symptom-form">
+        <label class="form-field">Date and time<input type="datetime-local" name="recordedAt" required></label>
+        <div class="rx-section">
+          <div class="rx-section-head"><h3>Readings <span>(from the Vitals master)</span></h3></div>
+          <div data-vital-rows></div>
+          <button type="button" class="button button-secondary button-compact" data-vital-add>+ Add reading</button>
+        </div>
+        <p class="form-error" data-vital-error role="alert" hidden></p>
+        <div class="symptom-actions"><button type="button" class="button button-secondary" data-vital-cancel>Cancel</button><button type="submit" class="button button-primary">Save vitals</button></div>
+      </div>
+    </form>
+  </dialog>
+  <footer class="app-footer"><span>© 2026 MediPulse · Demonstration prototype</span><span>Sample data only · Not for clinical use</span></footer>
+  <div class="toast-region" aria-live="polite"></div>
+</body>
+</html>

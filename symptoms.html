@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>Symptoms | MediPulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=14">
+  <script src="js/app.js?v=14" defer></script>
+</head>
+<body data-page="symptoms">
+  <header class="app-header" data-app-header></header>
+  <main class="workspace-main master-main">
+    <div class="breadcrumb"><a href="dashboard.html">Workspace</a><span>/</span><span>Events</span><span>/</span><span>Symptoms</span></div>
+    <div class="page-title-row"><div><span class="eyebrow">HEALTH EVENTS</span><h1>Symptoms</h1><p>Record how you are feeling and keep a timeline of your symptoms.</p></div></div>
+    <p class="master-access-note" data-symptom-access-note hidden>View-only access. Only Patient profiles can record or delete symptoms.</p>
+    <section class="card symptom-card" data-symptom-form-card hidden>
+      <h2 data-symptom-heading>Record Symptoms</h2>
+      <form class="symptom-form" data-symptom-form novalidate>
+        <div class="symptom-row">
+          <label class="form-field">Date and time<input type="datetime-local" name="recordedAt" required></label>
+          <label class="form-field">Severity<select name="severity" required><option value="">Select severity...</option><option>Mild</option><option>Moderate</option><option>Severe</option></select></label>
+        </div>
+        <fieldset class="form-field symptom-picker"><legend>Symptoms</legend>
+          <input type="search" data-symptom-filter placeholder="Search symptoms..." aria-label="Search symptoms">
+          <div class="symptom-options" data-symptom-options></div>
+        </fieldset>
+        <label class="form-field">Other symptoms (not listed)<input type="text" name="otherSymptoms" maxlength="300" placeholder="Add any unlisted symptom; separate several with commas"></label>
+        <p class="form-error" data-symptom-error role="alert" hidden></p>
+        <div class="symptom-actions"><button type="button" class="button button-secondary" data-symptom-cancel hidden>Cancel</button><button type="submit" class="button button-primary" data-symptom-submit>Save symptoms</button></div>
+      </form>
+    </section>
+    <section class="card directory-card">
+      <div class="directory-heading"><div><h2>Symptom history</h2><p>Most recent first.</p></div><span class="record-count" data-symptom-count>0 entries</span></div>
+      <div class="data-table-wrap"><table class="data-table"><thead><tr><th>DATE AND TIME</th><th>SEVERITY</th><th>SYMPTOMS</th><th data-symptom-actions-head>ACTIONS</th></tr></thead><tbody data-symptom-body></tbody></table><div class="empty-state" data-symptom-empty hidden><span>♡</span><b>No symptoms recorded yet</b><p>Entries you save will appear here.</p></div></div>
+      <div class="table-foot"><span>Saved in this browser only</span></div>
+    </section>
+    <p class="prototype-callout"><b>Prototype note:</b> Symptoms are stored in local browser storage only. Not for clinical use.</p>
+  </main>
+  <footer class="app-footer"><span>© 2026 MediPulse · Demonstration prototype</span><span>Sample data only · Not for clinical use</span></footer>
+  <div class="toast-region" aria-live="polite"></div>
+</body>
+</html>
