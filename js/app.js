@@ -327,8 +327,9 @@
         <div class="nav-menu"><button class="nav-menu-trigger" type="button">Groups master <span class="nav-caret">⌄</span></button><div class="nav-dropdown"><a href="groups-master.html">All directories</a><a href="groups-master.html?group=practiceTypes">Practice types</a><a href="groups-master.html?group=specializations">Specializations</a><a href="groups-master.html?group=userProfiles">User profiles</a><a href="groups-master.html?group=facilityTypes">Facility types</a><a href="groups-master.html?group=facilities">Facilities</a><a href="groups-master.html?group=tests">Tests</a><a href="groups-master.html?group=parameters">Health parameters</a><a href="groups-master.html?group=limitBands">Limit bands</a><a href="groups-master.html?group=vitals">Vitals</a><a href="groups-master.html?group=symptoms">Symptoms</a><a href="groups-master.html?group=interventionMethods">Intervention Method</a>${patientGroupLink}</div></div>
         ${patientLinks}
         <div class="nav-menu"><button class="nav-menu-trigger" type="button">Events <span class="nav-caret">⌄</span></button><div class="nav-dropdown"><a href="symptoms.html">Symptoms</a><a href="prescriptions.html">Prescriptions</a><a href="dashboard.html">Medications</a><a href="vitals.html">Vitals</a><a href="labtests.html">Lab Tests</a><a href="interventions.html">Interventions</a></div></div>
-        <div class="nav-menu"><button class="nav-menu-trigger" type="button">Reports <span class="nav-caret">⌄</span></button><div class="nav-dropdown"><a href="dashboard.html">Timeline chart</a><a href="dashboard.html">Trends</a><a href="dashboard.html">Abnormal results</a><a href="dashboard.html">Stocks</a></div></div>
-        <a href="dashboard.html">Analytics</a><a href="dashboard.html">Help</a>
+        <div class="nav-menu"><button class="nav-menu-trigger" type="button">Reports <span class="nav-caret">⌄</span></button><div class="nav-dropdown">        <a href="dashboard.html">Timeline chart</a><a href="dashboard.html">Trends</a><a href="dashboard.html">Stocks</a></div></div>
+                <div class="nav-menu"><button class="nav-menu-trigger${page === "analytics" || page === "abnormal" ? " is-current" : ""}" type="button">Analytics <span class="nav-caret">⌄</span></button><div class="nav-dropdown"><a href="analytics.html">Trends</a><a href="abnormal.html">Abnormal results</a></div></div>
+                <a href="dashboard.html">Help</a>
       </nav>
       <div class="app-header-right"><span class="demo-pill"><span class="live-dot"></span> DEMO</span><button class="profile-button" type="button" data-action="sign-out" aria-label="Sign out of demo session"><span class="profile-avatar">${htmlEscape(initials(displayName))}</span><span class="profile-meta"><b>${htmlEscape(displayName)}</b><small>${htmlEscape(role)}${user?.gender ? ` · ${htmlEscape(user.gender.split(" ")[0])}` : ""}</small></span><span class="nav-caret">⌄</span></button></div>`;
   }
@@ -2474,9 +2475,247 @@
     if (clock) clock.textContent = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date());
   }
 
+  // ---- Analytics: dependency-free SVG line charts ----
+  const CHART_COLORS = ["#e91e8c", "#4f5bd5", "#6ec6f0", "#f5b800", "#f97316", "#16a34a", "#9333ea", "#0d9488"];
+
+  function niceScale(min, max, count = 6) {
+    if (min === max) { min -= 1; max += 1; }
+    const raw = (max - min) / count;
+    const magnitude = 10 ** Math.floor(Math.log10(raw));
+    const step = [1, 2, 2.5, 5, 10].map(m => m * magnitude).find(s => s >= raw) || raw;
+    const lo = Math.floor(min / step) * step;
+    const hi = Math.ceil(max / step) * step;
+    const ticks = [];
+    for (let v = lo; v <= hi + step / 1000; v += step) ticks.push(Number(v.toFixed(6)));
+    return { lo, hi, ticks };
+  }
+
+  function chartDate(ms, withTime) {
+    const options = withTime ? { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" } : { month: "short", day: "numeric", year: "numeric" };
+    return new Intl.DateTimeFormat(undefined, options).format(new Date(ms));
+  }
+
+  // series: [{name, color, axis: "left"|"right", dashed, area, points: [{t, v}]}]; refLines: [{label, value, color}]
+  function renderLineChart(container, { series, refLines = [], leftLabel = "", rightLabel = "" }) {
+    const all = series.flatMap(item => item.points);
+    if (!all.length) {
+      container.innerHTML = '<div class="empty-state"><span>♡</span><b>Nothing to chart yet</b><p>Record a few entries to see the trend.</p></div>';
+      return;
+    }
+    const W = 900, H = 340, left = 62, right = series.some(item => item.axis === "right") ? 62 : 24, top = 42, bottom = 62;
+    let t0 = Math.min(...all.map(p => p.t)), t1 = Math.max(...all.map(p => p.t));
+    if (t0 === t1) { t0 -= 43200000; t1 += 43200000; }
+    const withTime = t1 - t0 <= 3 * 86400000;
+    const x = t => left + ((t - t0) / (t1 - t0)) * (W - left - right);
+    const scaleFor = axis => {
+      const values = series.filter(item => item.axis === axis).flatMap(item => item.points.map(p => p.v));
+      if (axis === "left") values.push(...refLines.map(line => line.value));
+      return values.length ? niceScale(Math.min(...values), Math.max(...values)) : null;
+    };
+    const scales = { left: scaleFor("left"), right: scaleFor("right") };
+    const y = (axis, v) => { const s = scales[axis]; return H - bottom - ((v - s.lo) / (s.hi - s.lo)) * (H - top - bottom); };
+    const parts = [];
+    const primary = scales.left || scales.right;
+    const primaryAxis = scales.left ? "left" : "right";
+    primary.ticks.forEach(v => {
+      parts.push(`<line x1="${left}" x2="${W - right}" y1="${y(primaryAxis, v)}" y2="${y(primaryAxis, v)}" class="chart-grid"/>`);
+      if (scales.left) parts.push(`<text x="${left - 8}" y="${y("left", v) + 4}" text-anchor="end" class="chart-tick">${v}</text>`);
+    });
+    if (scales.right) scales.right.ticks.forEach(v => parts.push(`<text x="${W - right + 8}" y="${y("right", v) + 4}" class="chart-tick">${v}</text>`));
+    const xTicks = [...new Set(all.map(p => p.t))].sort((a, b) => a - b);
+    const shown = xTicks.length <= 6 ? xTicks : Array.from({ length: 6 }, (_, i) => xTicks[Math.round(i * (xTicks.length - 1) / 5)]);
+    shown.forEach(t => parts.push(`<line x1="${x(t)}" x2="${x(t)}" y1="${H - bottom}" y2="${H - bottom + 4}" class="chart-axis"/><text transform="translate(${x(t)} ${H - bottom + 14}) rotate(-40)" text-anchor="end" class="chart-tick">${htmlEscape(chartDate(t, withTime))}</text>`));
+    parts.push(`<line x1="${left}" x2="${W - right}" y1="${H - bottom}" y2="${H - bottom}" class="chart-axis"/>`);
+    refLines.forEach(line => parts.push(`<line x1="${left}" x2="${W - right}" y1="${y("left", line.value)}" y2="${y("left", line.value)}" stroke="${line.color}" stroke-width="1.5" stroke-dasharray="5 4"><title>${htmlEscape(line.label)}: ${line.value}</title></line>`));
+    series.forEach(item => {
+      const pts = item.points.slice().sort((a, b) => a.t - b.t);
+      const coords = pts.map(p => `${x(p.t).toFixed(1)},${y(item.axis, p.v).toFixed(1)}`);
+      if (item.area && pts.length > 1) parts.push(`<polygon points="${x(pts[0].t).toFixed(1)},${H - bottom} ${coords.join(" ")} ${x(pts[pts.length - 1].t).toFixed(1)},${H - bottom}" fill="${item.color}" opacity=".15"/>`);
+      if (pts.length > 1) parts.push(`<polyline points="${coords.join(" ")}" fill="none" stroke="${item.color}" stroke-width="2.5" stroke-linejoin="round"${item.dashed ? ' stroke-dasharray="3 5" stroke-linecap="round"' : ""}/>`);
+      pts.forEach(p => parts.push(`<circle cx="${x(p.t).toFixed(1)}" cy="${y(item.axis, p.v).toFixed(1)}" r="4" fill="${item.color}" stroke="#fff" stroke-width="1.5"><title>${htmlEscape(item.name)}: ${p.v} (${htmlEscape(chartDate(p.t, true))})</title></circle>`));
+    });
+    if (leftLabel) parts.push(`<text transform="translate(14 ${(top + H - bottom) / 2}) rotate(-90)" text-anchor="middle" class="chart-axis-label">${htmlEscape(leftLabel)}</text>`);
+    if (rightLabel) parts.push(`<text transform="translate(${W - 12} ${(top + H - bottom) / 2}) rotate(90)" text-anchor="middle" class="chart-axis-label">${htmlEscape(rightLabel)}</text>`);
+    const legend = [...series.map(item => ({ name: item.name, color: item.color, dashed: item.dashed })), ...refLines.map(line => ({ name: line.label, color: line.color, dashed: true }))]
+      .map(item => `<span class="chart-key"><i style="background:${item.color}${item.dashed ? ";opacity:.75" : ""}"></i>${htmlEscape(item.name)}</span>`).join("");
+    container.innerHTML = `<div class="chart-legend">${legend}</div><svg viewBox="0 0 ${W} ${H}" class="chart-svg" role="img" aria-label="Trend chart">${parts.join("")}</svg>`;
+  }
+
+  function parseLimitRange(text) {
+    const match = String(text || "").match(/(-?\d+(?:\.\d+)?)\s*[-–]\s*(-?\d+(?:\.\d+)?)/);
+    return match ? [Number(match[1]), Number(match[2])] : null;
+  }
+
+  function renderVitalsTrend() {
+    const mine = state.vitalReadings.filter(item => item.patientId === patientKey());
+    const byVital = new Map();
+    mine.forEach(record => record.readings.forEach(entry => {
+      const value = Number(entry.value);
+      if (!Number.isFinite(value)) return;
+      if (!byVital.has(entry.vitalId)) byVital.set(entry.vitalId, []);
+      byVital.get(entry.vitalId).push({ t: new Date(record.recordedAt).getTime(), v: value });
+    }));
+    const order = [VITAL_PATTERNS.systolic, VITAL_PATTERNS.diastolic, VITAL_PATTERNS.heart, VITAL_PATTERNS.weight];
+    const ids = [...byVital.keys()].filter(id => vitalInfo(id)).sort((a, b) => {
+      const rank = id => { const i = order.findIndex(p => p.test(vitalInfo(id).name)); return i < 0 ? order.length : i; };
+      return rank(a) - rank(b);
+    });
+    // Weight (kg) has a very different scale from BP, pulse and sugar, so it gets the right-hand axis.
+    const series = ids.map((id, index) => {
+      const vital = vitalInfo(id);
+      const isWeight = VITAL_PATTERNS.weight.test(vital.name);
+      const named = vital.name.replace(/\s*\(.*\)\s*$/, "");
+      return { name: `${named}${vital.unit ? ` (${vital.unit})` : ""}`, color: CHART_COLORS[index % CHART_COLORS.length], axis: isWeight ? "right" : "left", dashed: isWeight, points: byVital.get(id) };
+    });
+    const leftUnits = [...new Set(ids.filter(id => !VITAL_PATTERNS.weight.test(vitalInfo(id).name)).map(id => vitalInfo(id).unit).filter(Boolean))];
+    renderLineChart(document.querySelector("[data-vitals-chart]"), { series, leftLabel: leftUnits.join(" / "), rightLabel: series.some(item => item.axis === "right") ? "Weight (kg)" : "" });
+  }
+
+  function renderLabTrend() {
+    const select = document.querySelector("[data-lab-measure]");
+    const mine = state.labResults.filter(item => item.patientId === patientKey());
+    const id = select.value;
+    const parameter = state.parameters.find(item => item.id === id);
+    const container = document.querySelector("[data-lab-chart]");
+    if (!parameter) { renderLineChart(container, { series: [] }); return; }
+    const points = [];
+    mine.forEach(record => record.values.filter(entry => entry.parameterId === id).forEach(entry => {
+      const value = Number(entry.value);
+      if (Number.isFinite(value)) points.push({ t: new Date(record.recordedAt).getTime(), v: value });
+    }));
+    const gender = activeGender();
+    const range = parseLimitRange(gender === "Female" ? parameter.femaleLimits : parameter.maleLimits);
+    const refLines = range ? [{ label: "Reference Range LOW", value: range[0], color: "#e76f51" }, { label: "Reference Range HIGH", value: range[1], color: "#2a9d8f" }] : [];
+    renderLineChart(container, { series: [{ name: parameter.unit && !parameter.name.includes(`(${parameter.unit})`) ? `${parameter.name} (${parameter.unit})` : parameter.name, color: "#9b51e0", axis: "left", area: true, points }], refLines, leftLabel: parameter.unit || "" });
+  }
+
+  function initAnalytics() {
+    renderAppHeader("analytics");
+    renderVitalsTrend();
+    const select = document.querySelector("[data-lab-measure]");
+    const recorded = new Set(state.labResults.filter(item => item.patientId === patientKey()).flatMap(item => item.values.map(entry => entry.parameterId)));
+    const options = state.parameters.filter(item => recorded.has(item.id)).map(item => ({ id: item.id, label: `${state.tests.find(test => test.id === item.testId)?.name.replace(/\s*\(.*\)\s*$/, "") || "Unlinked"} — ${item.name}` })).sort((a, b) => a.label.localeCompare(b.label));
+    select.innerHTML = options.map(item => `<option value="${htmlEscape(item.id)}">${htmlEscape(item.label)}</option>`).join("") || '<option value="">No lab results recorded</option>';
+    select.disabled = !options.length;
+    select.addEventListener("change", renderLabTrend);
+    renderLabTrend();
+  }
+
+  // ---- Abnormal results ----
+  // Returns the abnormal finding for one reading, or null when it is normal or cannot be judged.
+  function judgeReading(measureId, rawValue) {
+    const band = bandFor(measureId, rawValue);
+    if (band) {
+      if (band.severity === "Normal") return null;
+      return { label: band.name, severity: band.severity || "Abnormal", range: boundsText(band.lower, band.upper, "") };
+    }
+    const parameter = state.parameters.find(item => item.id === measureId);
+    if (!parameter) return null;
+    const range = parseLimitRange(activeGender() === "Female" ? parameter.femaleLimits : parameter.maleLimits);
+    const value = Number(rawValue);
+    if (!range || rawValue === "" || !Number.isFinite(value)) return null;
+    if (value < range[0]) return { label: "Low", severity: "Abnormal", range: `${range[0]} – ${range[1]}` };
+    if (value > range[1]) return { label: "High", severity: "Abnormal", range: `${range[0]} – ${range[1]}` };
+    return null;
+  }
+
+  function abnormalGroups() {
+    const me = patientKey();
+    const groupsOut = [];
+    state.vitalReadings.filter(item => item.patientId === me).forEach(record => {
+      const items = record.readings.map(entry => {
+        const vital = vitalInfo(entry.vitalId);
+        const found = vital ? judgeReading(entry.vitalId, entry.value) : null;
+        return found ? { ...found, name: vitalShortName(vital), value: entry.value, unit: vital.unit || "" } : null;
+      }).filter(Boolean);
+      if (items.length) groupsOut.push({ kind: "vital", id: record.id, title: "Vitals", at: record.recordedAt, sub: "", items });
+    });
+    state.labResults.filter(item => item.patientId === me).forEach(record => {
+      const items = record.values.map(entry => {
+        const parameter = state.parameters.find(item => item.id === entry.parameterId);
+        const found = parameter ? judgeReading(entry.parameterId, entry.value) : null;
+        return found ? { ...found, name: parameter.name, value: entry.value, unit: parameter.unit || "" } : null;
+      }).filter(Boolean);
+      if (!items.length) return;
+      const facility = state.facilities.find(item => item.id === record.facilityId);
+      groupsOut.push({ kind: "lab", id: record.id, title: state.tests.find(test => test.id === record.testId)?.name || "Lab test", at: record.recordedAt, sub: facility?.name || "", items });
+    });
+    return groupsOut.sort((a, b) => b.at.localeCompare(a.at));
+  }
+
+  function abnormalCards(list) {
+    return list.map(group => `<div class="abn-card"><div class="abn-card-head"><span><b>${htmlEscape(group.title)}</b> <small>(${htmlEscape(formatDateTime(group.at))}${group.sub ? ` · ${htmlEscape(group.sub)}` : ""})</small></span><button type="button" class="table-action" data-abn-view="${htmlEscape(group.kind)}:${htmlEscape(group.id)}">View record</button></div><div class="abn-pills">${group.items.map(item => `<span class="abn-pill abn-${htmlEscape(item.severity.toLowerCase())}"><b>${htmlEscape(item.name)}:</b> ${htmlEscape(item.value)}${item.unit ? ` ${htmlEscape(item.unit)}` : ""} <em>${htmlEscape(item.label)}</em>${item.range ? ` <small>(range ${htmlEscape(item.range)})</small>` : ""}</span>`).join("")}</div></div>`).join("");
+  }
+
+  function renderAbnormal() {
+    const from = document.querySelector("[data-abn-from]").value;
+    const to = document.querySelector("[data-abn-to]").value;
+    const list = abnormalGroups().filter(group => (!from || group.at.slice(0, 10) >= from) && (!to || group.at.slice(0, 10) <= to));
+    const view = document.querySelector("[data-abn-tab].is-active").dataset.abnTab;
+    document.querySelector("[data-abn-empty]").hidden = list.length > 0;
+    document.querySelector("[data-abn-list]").hidden = view !== "list" || !list.length;
+    document.querySelector("[data-abn-chart]").hidden = view !== "chart" || !list.length;
+    document.querySelector("[data-abn-list]").innerHTML = abnormalCards(list);
+    if (view !== "chart" || !list.length) return;
+    const counts = new Map();
+    list.forEach(group => { const key = group.at.slice(0, 7); counts.set(key, (counts.get(key) || 0) + group.items.length); });
+    const months = [...counts.keys()].sort();
+    if (!months.includes(abnormalMonth)) abnormalMonth = months[months.length - 1];
+    const max = Math.max(...counts.values());
+    const scale = niceScale(0, max, Math.min(max, 5) || 1);
+    const W = 900, H = 300, left = 46, bottom = 54, top = 16;
+    const slot = (W - left - 20) / months.length;
+    const barW = Math.min(56, slot * 0.6);
+    const y = v => H - bottom - (v / scale.hi) * (H - top - bottom);
+    const parts = scale.ticks.map(v => `<line x1="${left}" x2="${W - 20}" y1="${y(v)}" y2="${y(v)}" class="chart-grid"/><text x="${left - 8}" y="${y(v) + 4}" text-anchor="end" class="chart-tick">${v}</text>`);
+    months.forEach((key, index) => {
+      const cx = left + slot * index + slot / 2;
+      const count = counts.get(key);
+      const label = new Intl.DateTimeFormat(undefined, { month: "short", year: "numeric" }).format(new Date(`${key}-01T00:00:00`));
+      parts.push(`<g class="abn-bar${key === abnormalMonth ? " is-selected" : ""}" data-abn-month="${key}" tabindex="0" role="button" aria-label="${htmlEscape(label)}: ${count} abnormal"><rect x="${cx - barW / 2}" y="${y(count)}" width="${barW}" height="${H - bottom - y(count)}" rx="4"/><text x="${cx}" y="${y(count) - 6}" text-anchor="middle" class="chart-tick">${count}</text><text x="${cx}" y="${H - bottom + 18}" text-anchor="middle" class="chart-tick">${htmlEscape(label)}</text></g>`);
+    });
+    parts.push(`<line x1="${left}" x2="${W - 20}" y1="${H - bottom}" y2="${H - bottom}" class="chart-axis"/>`);
+    document.querySelector("[data-abn-bars]").innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" role="img" aria-label="Abnormal readings per month">${parts.join("")}</svg>`;
+    const monthLabel = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(new Date(`${abnormalMonth}-01T00:00:00`));
+    document.querySelector("[data-abn-month-title]").textContent = `${monthLabel} — ${counts.get(abnormalMonth)} abnormal ${counts.get(abnormalMonth) === 1 ? "reading" : "readings"}`;
+    document.querySelector("[data-abn-month-list]").innerHTML = abnormalCards(list.filter(group => group.at.startsWith(abnormalMonth)));
+  }
+
+  let abnormalMonth = null;
+
+  function initAbnormal() {
+    renderAppHeader("abnormal");
+    document.querySelector("[data-abn-from]").addEventListener("change", renderAbnormal);
+    document.querySelector("[data-abn-to]").addEventListener("change", renderAbnormal);
+    document.addEventListener("click", event => {
+      const tab = event.target.closest("[data-abn-tab]");
+      if (tab) {
+        document.querySelectorAll("[data-abn-tab]").forEach(item => item.classList.toggle("is-active", item === tab));
+        renderAbnormal();
+        return;
+      }
+      const bar = event.target.closest("[data-abn-month]");
+      if (bar) { abnormalMonth = bar.dataset.abnMonth; renderAbnormal(); return; }
+      const view = event.target.closest("[data-abn-view]");
+      if (view) {
+        const text = view.dataset.abnView;
+        const split = text.indexOf(":");
+        const kind = text.slice(0, split), id = text.slice(split + 1);
+        if (kind === "lab") viewLab(id); else viewVital(id);
+      }
+    });
+    document.addEventListener("keydown", event => {
+      const bar = event.target.closest?.("[data-abn-month]");
+      if (bar && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); abnormalMonth = bar.dataset.abnMonth; renderAbnormal(); }
+    });
+    renderAbnormal();
+  }
+
   function init() {
     state = loadState();
     const page = document.body.dataset.page;
+    if (page === "analytics") initAnalytics();
+    if (page === "abnormal") initAbnormal();
     if (page === "home") {
       renderSiteHeader();
       updateClock();

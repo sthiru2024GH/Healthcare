@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>Abnormal Results | MediPulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=18">
+  <script src="js/app.js?v=18" defer></script>
+</head>
+<body data-page="abnormal">
+  <header class="app-header" data-app-header></header>
+  <main class="workspace-main master-main">
+    <div class="page-title-row"><div><span class="eyebrow">PATIENT HOME</span><h1>My Dashboard</h1></div></div>
+    <nav class="tab-strip" aria-label="Health sections"><a href="symptoms.html">Symptoms</a><a href="prescriptions.html">Prescriptions</a><a href="dashboard.html">Medications</a><a href="interventions.html">Interventions</a><a href="vitals.html">Vitals</a><a href="labtests.html">Lab Tests</a><a href="analytics.html" class="is-current">Analytics</a><span>Advanced Analytics</span></nav>
+    <section class="card med-card">
+      <div class="med-log-head"><h2>Abnormal Results</h2><div class="log-date"><label>From<input type="date" data-abn-from></label><label>To<input type="date" data-abn-to></label></div></div>
+      <div class="abn-tabs" role="tablist"><button type="button" class="abn-tab is-active" data-abn-tab="list" role="tab">Abnormal Results</button><button type="button" class="abn-tab" data-abn-tab="chart" role="tab">Abnormal Results – Chart</button></div>
+      <div data-abn-list></div>
+      <div data-abn-chart hidden>
+        <p class="abn-hint">Abnormal readings per month. Click a bar to see that month's results.</p>
+        <div data-abn-bars></div>
+        <h3 class="abn-month-title" data-abn-month-title></h3>
+        <div data-abn-month-list></div>
+      </div>
+      <div class="empty-state" data-abn-empty hidden><span>♡</span><b>No abnormal results</b><p>Readings outside the limit bands or reference range will appear here.</p></div>
+    </section>
+    <p class="prototype-callout"><b>Prototype note:</b> A reading is flagged using the limit band that matches your sex and age (Borderline, Abnormal or Critical). Where no band applies, lab parameters are checked against the reference range. Informational only, not for clinical use.</p>
+  </main>
+  <footer class="app-footer"><span>© 2026 MediPulse · Demonstration prototype</span><span>Sample data only · Not for clinical use</span></footer>
+  <div class="toast-region" aria-live="polite"></div>
+</body>
+</html>

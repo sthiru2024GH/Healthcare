@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>Analytics | MediPulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=18">
+  <script src="js/app.js?v=18" defer></script>
+</head>
+<body data-page="analytics">
+  <header class="app-header" data-app-header></header>
+  <main class="workspace-main master-main">
+    <div class="page-title-row"><div><span class="eyebrow">PATIENT HOME</span><h1>My Dashboard</h1></div></div>
+    <nav class="tab-strip" aria-label="Health sections"><a href="symptoms.html">Symptoms</a><a href="prescriptions.html">Prescriptions</a><a href="dashboard.html">Medications</a><a href="interventions.html">Interventions</a><a href="vitals.html">Vitals</a><a href="labtests.html">Lab Tests</a><a href="analytics.html" class="is-current">Analytics</a><span>Advanced Analytics</span></nav>
+    <section class="card chart-card">
+      <div class="chart-head"><h2>Vitals Trend</h2></div>
+      <div data-vitals-chart></div>
+    </section>
+    <section class="card chart-card">
+      <div class="chart-head"><h2>Lab Test Trend</h2><select data-lab-measure aria-label="Lab parameter"></select></div>
+      <div data-lab-chart></div>
+    </section>
+    <p class="prototype-callout"><b>Prototype note:</b> Charts show only your own recorded vitals and lab results, with no date limit. Reference lines come from the parameter's reference limits. Not for clinical use.</p>
+  </main>
+  <footer class="app-footer"><span>© 2026 MediPulse · Demonstration prototype</span><span>Sample data only · Not for clinical use</span></footer>
+  <div class="toast-region" aria-live="polite"></div>
+</body>
+</html>
