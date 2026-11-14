@@ -46,7 +46,7 @@ D:\Healthcare\
 
 | Collection | Key fields |
 | :--- | :--- |
-| `prescriptions` | patient, practitioner, date |
+| `prescriptions` | patient, practitioner, date, closed status (missing means open) |
 | `prescriptionDiagnoses` | prescription, requested diagnosis/test |
 | `prescriptionMedications` | prescription, medicine, dose, unit, periods (Morning/Afternoon/Evening/Night), meal dependency |
 | `medicationLogs` | medication, date, period, taken status |
@@ -59,6 +59,7 @@ D:\Healthcare\
 **Referential rules.**
 - *Master lock:* a master record in use cannot be edited or deleted until the detail records using its key are removed (Facility, Test, Parameter, Vital, Practitioner, Facility type, Prescription and diagnosis links).
 - No future-dated entries; no default date window on lists.
+- Patients can close or reopen prescriptions without removing their linked history. The schedule uses the latest prescription per practitioner; if it is closed, no older prescription is automatically resumed.
 - Every record offers View, Edit, Delete.
 
 **Limit bands (answers the staggered-range question).** The staggered tier model in section 5 is implemented as optional child rows in `limitBands`, one row per tier, attached to a parameter or vital. Matching is by value (lower inclusive, upper exclusive), sex, and age derived from the patient's Date of birth. The first active match is shown as a coloured badge (Normal green, Borderline amber, Abnormal orange, Critical red) in the Vitals and Lab Tests forms and lists. The free-text limit columns from the CSVs are display-only and are not parsed.

@@ -1580,7 +1580,7 @@
       const meds = state.prescriptionMedications.filter(child => child.prescriptionId === item.id);
       const date = new Date(item.issuedAt);
       const list = values => values.length ? `<ul class="rx-list">${values.map(value => `<li>${htmlEscape(value)}</li>`).join("")}</ul>` : "—";
-      return `<tr><td>${htmlEscape(isNaN(date) ? item.issuedAt : formatter.format(date))}</td><td>${htmlEscape(rxPractitionerName(item.practitionerId))}</td><td class="wrap-cell">${list(dx)}</td><td class="wrap-cell">${list(meds.map(rxDescribeMed))}</td><td class="wrap-cell">${htmlEscape(item.notes)}</td>${canEdit ? `<td><div class="table-actions"><button class="table-action" type="button" data-rx-view="${htmlEscape(item.id)}">View</button><button class="table-action" type="button" data-rx-edit="${htmlEscape(item.id)}">Edit</button><button class="table-action delete" type="button" data-rx-delete="${htmlEscape(item.id)}">Delete</button></div></td>` : ""}</tr>`;
+      return `<tr><td>${htmlEscape(isNaN(date) ? item.issuedAt : formatter.format(date))}</td><td>${htmlEscape(rxPractitionerName(item.practitionerId))}</td><td class="wrap-cell">${list(dx)}</td><td class="wrap-cell">${list(meds.map(rxDescribeMed))}</td><td class="wrap-cell">${htmlEscape(item.notes)}</td><td><span class="status ${item.closed ? "status-warning" : "status-success"}">${item.closed ? "CLOSED" : "OPEN"}</span></td>${canEdit ? `<td><div class="table-actions"><button class="table-action" type="button" data-rx-view="${htmlEscape(item.id)}">View</button><button class="table-action" type="button" data-rx-edit="${htmlEscape(item.id)}">Edit</button><button class="table-action" type="button" data-rx-toggle="${htmlEscape(item.id)}">${item.closed ? "Reopen" : "Close"}</button><button class="table-action delete" type="button" data-rx-delete="${htmlEscape(item.id)}">Delete</button></div></td>` : ""}</tr>`;
     }).join("");
     document.querySelector("[data-rx-empty]").hidden = list.length > 0;
     document.querySelector("[data-rx-count]").textContent = `${list.length} ${list.length === 1 ? "prescription" : "prescriptions"}`;
@@ -1626,6 +1626,8 @@
     }
     error.hidden = true;
     const snapshot = { p: [...state.prescriptions], d: [...state.prescriptionDiagnoses], m: [...state.prescriptionMedications], l: state.medicationLogs.map(log => log.practitionerId) };
+    const previousRx = editingRxId && state.prescriptions.find(item => item.id === editingRxId && item.patientId === patientKey());
+    if (editingRxId && !previousRx) return fail("This prescription is no longer available. Reload the page and try again.");
     const id = editingRxId || createId("RX");
     const wasEditing = Boolean(editingRxId);
     if (wasEditing) {
@@ -1635,7 +1637,7 @@
       state.medicationLogs.filter(log => log.prescriptionId === id).forEach(log => { log.practitionerId = practitionerId; });
     }
     const keys = { prescriptionId: id, patientId: patientKey(), practitionerId };
-    state.prescriptions.push({ id, patientId: patientKey(), practitionerId, issuedAt, notes });
+    state.prescriptions.push({ id, patientId: patientKey(), practitionerId, issuedAt, notes, closed: Boolean(previousRx?.closed) });
     dxIds.forEach(testId => state.prescriptionDiagnoses.push({ id: createId("RXDX"), ...keys, testId }));
     meds.forEach(med => state.prescriptionMedications.push({ ...keys, ...med, id: med.id || createId("RXMED") }));
     if (!saveState()) {
@@ -1679,6 +1681,7 @@
       ["Patient ID", item.patientId],
       ["Practitioner", `${rxPractitionerName(item.practitionerId)} (${item.practitionerId})`],
       ["Date and time", isNaN(date) ? item.issuedAt : new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date)],
+      ["Status", item.closed ? "Closed" : "Open"],
       ["Notes", item.notes]
     ];
     let dialog = document.querySelector("[data-details-dialog]");
@@ -1702,6 +1705,25 @@
     dialog.addEventListener("close", () => dialog.classList.remove("rx-dialog"), { once: true });
     dialog.querySelector("[data-close-details]").addEventListener("click", () => dialog.close());
     dialog.showModal();
+  }
+
+  function toggleRx(id) {
+    if (!requirePatientProfile()) return;
+    const item = state.prescriptions.find(entry => entry.id === id && entry.patientId === patientKey());
+    if (!item) return showToast("This prescription is no longer available.", true);
+    const closing = !item.closed;
+    const message = closing
+      ? "Close this prescription? Its medications will no longer appear in the schedule. Older prescriptions will not restart automatically."
+      : "Reopen this prescription? Its medications appear only if it is the latest prescription from this practitioner.";
+    if (!window.confirm(message)) return;
+    const previous = item.closed;
+    item.closed = closing;
+    if (!saveState()) {
+      item.closed = previous;
+      return;
+    }
+    renderPrescriptions();
+    showToast(closing ? "Prescription closed." : "Prescription reopened.");
   }
 
   function deleteRx(id) {
@@ -1750,6 +1772,8 @@
       if (view) viewRx(view.dataset.rxView);
       const edit = event.target.closest("[data-rx-edit]");
       if (edit) editRx(edit.dataset.rxEdit);
+      const toggle = event.target.closest("[data-rx-toggle]");
+      if (toggle) toggleRx(toggle.dataset.rxToggle);
       const del = event.target.closest("[data-rx-delete]");
       if (del) deleteRx(del.dataset.rxDelete);
     });
@@ -1960,6 +1984,7 @@
     });
     const entries = [];
     latest.forEach(rx => {
+      if (rx.closed) return;
       state.prescriptionMedications.filter(med => med.prescriptionId === rx.id).forEach(med => {
         med.timings.forEach(timing => {
           const taken = state.medicationLogs.some(log => log.medicationId === med.id && log.timing === timing && log.scheduledDate === day);
@@ -2066,8 +2091,12 @@
     const takenAt = item.querySelector('input[type="datetime-local"]').value;
     if (!takenAt) return showToast("Enter the time the medication was taken.", true);
     if (takenAt > nowLocalInput()) return showToast("Time taken cannot be in the future.", true);
+    state = loadState();
     const med = state.prescriptionMedications.find(entry => entry.id === button.dataset.takeMed);
-    if (!med) return;
+    if (!med || !medicationSchedule(todayInput()).some(entry => entry.med.id === med.id && entry.timing === button.dataset.takeTiming)) {
+      renderSchedule();
+      return showToast("This dose is no longer due in the current schedule.", true);
+    }
     const log = { id: createId("MEDLOG"), patientId: patientKey(), practitionerId: med.practitionerId, prescriptionId: med.prescriptionId, medicationId: med.id, drugName: med.drugName, timing: button.dataset.takeTiming, scheduledDate: todayInput(), takenAt };
     state.medicationLogs.push(log);
     if (!saveState()) {
@@ -2081,6 +2110,15 @@
 
   function initDashboard() {
     renderAppHeader("dashboard");
+    let displayedState = window.localStorage.getItem(STORE_KEY);
+    const refreshSavedDashboard = () => {
+      const saved = window.localStorage.getItem(STORE_KEY);
+      if (saved === displayedState) return;
+      state = loadState();
+      displayedState = saved;
+      renderSchedule();
+      renderMedLog();
+    };
     const dateInput = document.querySelector("[data-log-date]");
     dateInput.addEventListener("change", renderMedLog);
     document.addEventListener("click", event => {
@@ -2095,6 +2133,13 @@
     });
     renderSchedule();
     renderMedLog();
+    window.addEventListener("storage", event => {
+      if (event.key === STORE_KEY || event.key === null) refreshSavedDashboard();
+    });
+    window.addEventListener("pageshow", refreshSavedDashboard);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) refreshSavedDashboard();
+    });
   }
 
   const VITAL_PATTERNS = { systolic: /systolic/i, diastolic: /diastolic/i, heart: /heart rate|pulse/i, sugar: /blood sugar|glucose/i, weight: /weight/i };
@@ -2491,7 +2536,7 @@
   }
 
   function chartDate(ms, withTime) {
-    const options = withTime ? { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" } : { month: "short", day: "numeric", year: "numeric" };
+    const options = withTime ? { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" } : { month: "short", day: "numeric", year: "numeric" };
     return new Intl.DateTimeFormat(undefined, options).format(new Date(ms));
   }
 
@@ -2502,10 +2547,17 @@
       container.innerHTML = '<div class="empty-state"><span>♡</span><b>Nothing to chart yet</b><p>Record a few entries to see the trend.</p></div>';
       return;
     }
-    const W = 900, H = 340, left = 62, right = series.some(item => item.axis === "right") ? 62 : 24, top = 42, bottom = 62;
-    let t0 = Math.min(...all.map(p => p.t)), t1 = Math.max(...all.map(p => p.t));
-    if (t0 === t1) { t0 -= 43200000; t1 += 43200000; }
-    const withTime = t1 - t0 <= 3 * 86400000;
+    const H = 365, left = 90, right = series.some(item => item.axis === "right") ? 62 : 24, top = 42, bottom = 88;
+    const first = new Date(Math.min(...all.map(p => p.t)));
+    const last = new Date(Math.max(...all.map(p => p.t)));
+    first.setHours(0, 0, 0, 0);
+    last.setHours(0, 0, 0, 0);
+    const xTicks = [];
+    for (const date = new Date(first); date <= last; date.setDate(date.getDate() + 1)) xTicks.push(date.getTime());
+    const end = new Date(last);
+    end.setDate(end.getDate() + 1);
+    const t0 = first.getTime(), t1 = end.getTime();
+    const W = Math.max(900, left + right + xTicks.length * 75);
     const x = t => left + ((t - t0) / (t1 - t0)) * (W - left - right);
     const scaleFor = axis => {
       const values = series.filter(item => item.axis === axis).flatMap(item => item.points.map(p => p.v));
@@ -2522,9 +2574,7 @@
       if (scales.left) parts.push(`<text x="${left - 8}" y="${y("left", v) + 4}" text-anchor="end" class="chart-tick">${v}</text>`);
     });
     if (scales.right) scales.right.ticks.forEach(v => parts.push(`<text x="${W - right + 8}" y="${y("right", v) + 4}" class="chart-tick">${v}</text>`));
-    const xTicks = [...new Set(all.map(p => p.t))].sort((a, b) => a - b);
-    const shown = xTicks.length <= 6 ? xTicks : Array.from({ length: 6 }, (_, i) => xTicks[Math.round(i * (xTicks.length - 1) / 5)]);
-    shown.forEach(t => parts.push(`<line x1="${x(t)}" x2="${x(t)}" y1="${H - bottom}" y2="${H - bottom + 4}" class="chart-axis"/><text transform="translate(${x(t)} ${H - bottom + 14}) rotate(-40)" text-anchor="end" class="chart-tick">${htmlEscape(chartDate(t, withTime))}</text>`));
+    xTicks.forEach(t => parts.push(`<line x1="${x(t)}" x2="${x(t)}" y1="${H - bottom}" y2="${H - bottom + 4}" class="chart-axis"/><text transform="translate(${x(t)} ${H - bottom + 14}) rotate(-40)" text-anchor="end" class="chart-tick">${htmlEscape(chartDate(t, false))}</text>`));
     parts.push(`<line x1="${left}" x2="${W - right}" y1="${H - bottom}" y2="${H - bottom}" class="chart-axis"/>`);
     refLines.forEach(line => parts.push(`<line x1="${left}" x2="${W - right}" y1="${y("left", line.value)}" y2="${y("left", line.value)}" stroke="${line.color}" stroke-width="1.5" stroke-dasharray="5 4"><title>${htmlEscape(line.label)}: ${line.value}</title></line>`));
     series.forEach(item => {
@@ -2538,7 +2588,7 @@
     if (rightLabel) parts.push(`<text transform="translate(${W - 12} ${(top + H - bottom) / 2}) rotate(90)" text-anchor="middle" class="chart-axis-label">${htmlEscape(rightLabel)}</text>`);
     const legend = [...series.map(item => ({ name: item.name, color: item.color, dashed: item.dashed })), ...refLines.map(line => ({ name: line.label, color: line.color, dashed: true }))]
       .map(item => `<span class="chart-key"><i style="background:${item.color}${item.dashed ? ";opacity:.75" : ""}"></i>${htmlEscape(item.name)}</span>`).join("");
-    container.innerHTML = `<div class="chart-legend">${legend}</div><svg viewBox="0 0 ${W} ${H}" class="chart-svg" role="img" aria-label="Trend chart">${parts.join("")}</svg>`;
+    container.innerHTML = `<div class="chart-legend">${legend}</div><div class="chart-scroll" tabindex="0" role="region" aria-label="Trend chart, scroll horizontally to see all dates"><svg viewBox="0 0 ${W} ${H}" class="chart-svg" style="min-width:${W}px" role="img" aria-label="Trend chart">${parts.join("")}</svg></div>`;
   }
 
   function parseLimitRange(text) {

@@ -24,6 +24,7 @@ Open [http://localhost:8000/index.html](http://localhost:8000/index.html). Node.
 | `interventions.html` | Interventions captured against prescriptions |
 | `vitals.html` | Vitals log (BP, pulse, weight, fasting and post-meal sugar) with limit-band badges |
 | `labtests.html` | Lab test results by facility, test and requesting practitioner, with limit-band badges |
+| `analytics.html` | Vitals and lab trends, with every calendar date in the displayed span on the horizontal axis; scroll horizontally for long spans |
 | `practitioners.html` | Practitioner directory (Patient only) |
 | `groups-master.html` | Group masters (see below) |
 | `tests-parameters-studio.html` | Test categories and health parameters with male/female reference limits |
@@ -41,6 +42,7 @@ Practice type, Specialization, User profile, Facility type, **Facilities** (type
 - **Dependent masters** appear after their parent in forms (e.g. Facility type before Facility).
 - **Master-record lock:** once a master record is used by any detail record, it cannot be edited or deleted until those detail records are removed. Examples: a Facility used by a lab result, a Parameter or Vital that has limit bands, a prescription referenced by lab results.
 - **Dates:** future-dated entries are rejected. No default date range is applied to lists (From/To start blank and show everything; the Medication Log view date blank means all dates).
+- **Prescriptions and schedule:** Patients can close or reopen a prescription in its history. The latest prescription by issue date for each practitioner determines the schedule; if it is closed, no older prescription is automatically resumed. Reopening an older prescription does not override a newer one. Existing prescriptions are open by default. Closing retains history, medication logs and lab links.
 - **Vitals:** a saved record needs at least one reading. Several records may share a timestamp, and the date/time can be edited.
 - **Lab tests:** choose facility, test, then *Requested by* (Self or a practitioner); a practitioner's requested diagnoses from their prescriptions can be linked. At least one value is required.
 

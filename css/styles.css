@@ -718,6 +718,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .chart-head h2 { margin: 0; font-size: 15px; }
 .chart-head select { max-width: 320px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font: 500 12px var(--font-data); background: #fff; }
 .chart-svg { width: 100%; height: auto; display: block; }
+.chart-scroll { overflow-x: auto; }
 .chart-grid { stroke: #e5e7eb; stroke-width: 1; }
 .chart-axis { stroke: #cbd5e1; stroke-width: 1; }
 .chart-tick { fill: #64748b; font: 500 10px var(--font-data); }
