@@ -15,6 +15,15 @@
         { key: "status", label: "Status", type: "select", options: ["Active", "Draft", "Staged"] }
       ]
     },
+    prescriptionTypes: {
+      label: "Prescription type", icon: "RX", prefix: "RXT",
+      columns: [["practiceIds", "Practice types"], ["name", "Prescription type"], ["status", "Status"]],
+      fields: [
+        { key: "practiceIds", label: "Practice types", type: "relations", group: "practiceTypes", required: true, full: true },
+        { key: "name", label: "Prescription type", required: true },
+        { key: "status", label: "Status", type: "select", options: ["Active", "Draft", "Staged"] }
+      ]
+    },
     specializations: {
       label: "Specialization", icon: "SP", prefix: "SPEC",
       columns: [["name", "Specialization"], ["practiceId", "Practice type"], ["standardCode", "Standard code"], ["status", "Status"]],
@@ -58,8 +67,9 @@
     },
     tests: {
       label: "Tests", icon: "TS", prefix: "TEST",
-      columns: [["name", "Category (test panel)"], ["description", "Description"], ["parameterCount", "Parameters"], ["status", "Status"]],
+      columns: [["testSubgroup", "Subgroup"], ["name", "Category (test panel)"], ["description", "Description"], ["parameterCount", "Parameters"], ["status", "Status"]],
       fields: [
+        { key: "testSubgroup", label: "Test subgroup", type: "select", options: ["Clinical", "Interventional"], required: true },
         { key: "name", label: "Category (test panel)", required: true },
         { key: "description", label: "Description", type: "textarea", full: true },
         { key: "status", label: "Status", type: "select", options: ["Active", "Draft", "Staged"] }
@@ -187,6 +197,7 @@
       { id: "FAC-IMG-05", name: "Imaging & Scan Centre", description: "Diagnostic imaging services", capabilities: "Imaging · Reporting", status: "Draft" }
     ],
     facilities: [],
+    prescriptionTypes: [],
     limitBands: [],
     tests: [],
     parameters: [],
@@ -206,8 +217,12 @@
     prescriptionMedications: [],
     interventionPrescriptions: [],
     interventionItems: [],
+    interventionReports: [],
+    ipdEncounters: [],
     medicationLogs: [],
     labResults: [],
+    openingStocks: [],
+    stockReceipts: [],
     vitalReadings: []  };
 
   const appointments = [
@@ -244,9 +259,15 @@
         if (parsed[key] === undefined && seed[key]) parsed[key] = structuredClone(seed[key]);
         if (!Array.isArray(parsed[key])) throw new Error(`Saved demo data is missing the ${key} directory.`);
       }
-      for (const key of ["prescriptions", "prescriptionDiagnoses", "prescriptionMedications", "interventionPrescriptions", "interventionItems", "medicationLogs", "vitalReadings", "labResults"]) {
+      for (const key of ["prescriptions", "prescriptionDiagnoses", "prescriptionMedications", "interventionPrescriptions", "interventionItems", "medicationLogs", "vitalReadings", "labResults", "openingStocks"]) {
         if (!Array.isArray(parsed[key])) parsed[key] = [];
       }
+      if (parsed.stockReceipts === undefined) parsed.stockReceipts = [];
+      else if (!Array.isArray(parsed.stockReceipts)) throw new Error("Saved receipt data is invalid.");
+      if (parsed.interventionReports === undefined) parsed.interventionReports = [];
+      else if (!Array.isArray(parsed.interventionReports)) throw new Error("Saved intervention report data is invalid.");
+      if (parsed.ipdEncounters === undefined) parsed.ipdEncounters = [];
+      else if (!Array.isArray(parsed.ipdEncounters)) throw new Error("Saved admission data is invalid.");
       return parsed;
     } catch (error) {
       if (error instanceof SyntaxError || error instanceof TypeError || error instanceof Error) {
@@ -269,6 +290,32 @@
       showToast("The browser could not save this change. Check local storage permissions.", true);
       return false;
     }
+  }
+
+  function migratePrescriptions() {
+    if (state.prescriptionTypesMigrationVersion === 1) return true;
+    const ids = new Set(state.prescriptions.map(item => item.id));
+    if (state.interventionPrescriptions.some(item => ids.has(item.id))) {
+      showToast("Prescription migration stopped: duplicate prescription IDs require review.", true);
+      console.error("Prescription migration stopped: duplicate prescription IDs.");
+      return false;
+    }
+    const old = state;
+    const legacyInterventions = structuredClone(state.interventionPrescriptions);
+    state = {
+      ...state,
+      legacyInterventionBackup: { prescriptions: legacyInterventions, items: structuredClone(state.interventionItems) },
+      prescriptions: [
+        ...state.prescriptions.map(item => ({ ...item, typeName: item.typeName || "Clinical" })),
+        ...state.interventionPrescriptions.map(item => ({ ...item, typeName: "Interventional", closed: false }))
+      ],
+      interventionItems: state.interventionItems.map(item => ({ ...item, prescriptionId: item.interventionPrescriptionId })),
+      interventionPrescriptions: [],
+      prescriptionTypesMigrationVersion: 1
+    };
+    if (saveState()) return true;
+    state = old;
+    return false;
   }
 
   function getUser() {
@@ -324,11 +371,11 @@
       <a class="brand brand-small" href="dashboard.html"><span class="brand-symbol">✳</span><span>MediPulse</span></a>
       <nav class="app-nav" aria-label="Clinical workspace navigation">
         <a href="dashboard.html" class="${current === "dashboard.html" ? "is-current" : ""}">Workspace</a>
-        <div class="nav-menu"><button class="nav-menu-trigger" type="button">Groups master <span class="nav-caret">⌄</span></button><div class="nav-dropdown"><a href="groups-master.html">All directories</a><a href="groups-master.html?group=practiceTypes">Practice types</a><a href="groups-master.html?group=specializations">Specializations</a><a href="groups-master.html?group=userProfiles">User profiles</a><a href="groups-master.html?group=facilityTypes">Facility types</a><a href="groups-master.html?group=facilities">Facilities</a><a href="groups-master.html?group=tests">Tests</a><a href="groups-master.html?group=parameters">Health parameters</a><a href="groups-master.html?group=limitBands">Limit bands</a><a href="groups-master.html?group=vitals">Vitals</a><a href="groups-master.html?group=symptoms">Symptoms</a><a href="groups-master.html?group=interventionMethods">Intervention Method</a>${patientGroupLink}</div></div>
+        <div class="nav-menu"><button class="nav-menu-trigger" type="button">Groups master <span class="nav-caret">⌄</span></button><div class="nav-dropdown"><a href="groups-master.html">All directories</a><a href="groups-master.html?group=practiceTypes">Practice types</a><a href="groups-master.html?group=prescriptionTypes">Prescription type</a><a href="groups-master.html?group=specializations">Specializations</a><a href="groups-master.html?group=userProfiles">User profiles</a><a href="groups-master.html?group=facilityTypes">Facility types</a><a href="groups-master.html?group=facilities">Facilities</a><a href="groups-master.html?group=tests">Tests</a><a href="groups-master.html?group=parameters">Health parameters</a><a href="groups-master.html?group=limitBands">Limit bands</a><a href="groups-master.html?group=vitals">Vitals</a><a href="groups-master.html?group=symptoms">Symptoms</a><a href="groups-master.html?group=interventionMethods">Intervention Method</a>${patientGroupLink}</div></div>
         ${patientLinks}
-        <div class="nav-menu"><button class="nav-menu-trigger" type="button">Events <span class="nav-caret">⌄</span></button><div class="nav-dropdown"><a href="symptoms.html">Symptoms</a><a href="prescriptions.html">Prescriptions</a><a href="dashboard.html">Medications</a><a href="vitals.html">Vitals</a><a href="labtests.html">Lab Tests</a><a href="interventions.html">Interventions</a></div></div>
-        <div class="nav-menu"><button class="nav-menu-trigger" type="button">Reports <span class="nav-caret">⌄</span></button><div class="nav-dropdown">        <a href="dashboard.html">Timeline chart</a><a href="dashboard.html">Trends</a><a href="dashboard.html">Stocks</a></div></div>
-                <div class="nav-menu"><button class="nav-menu-trigger${page === "analytics" || page === "abnormal" ? " is-current" : ""}" type="button">Analytics <span class="nav-caret">⌄</span></button><div class="nav-dropdown"><a href="analytics.html">Trends</a><a href="abnormal.html">Abnormal results</a></div></div>
+        <div class="nav-menu"><button class="nav-menu-trigger" type="button">Events <span class="nav-caret">⌄</span></button><div class="nav-dropdown"><a href="symptoms.html">Symptoms</a><a href="prescriptions.html">Prescriptions</a><a href="dashboard.html">Medications</a><a href="vitals.html">Vitals</a><a href="labtests.html">Lab Tests</a><a href="interventions.html">Interventions</a><a href="inpatient.html">In-Patient Admissions</a></div></div>
+        <div class="nav-menu"><button class="nav-menu-trigger" type="button">Reports <span class="nav-caret">⌄</span></button><div class="nav-dropdown"><a href="dashboard.html">Timeline chart</a><a href="dashboard.html">Trends</a><a href="safety-stock.html">Stocks — Safety stock</a></div></div>
+                <div class="nav-menu"><button class="nav-menu-trigger${page === "analytics" || page === "abnormal" || page === "advanced-analytics" ? " is-current" : ""}" type="button">Analytics <span class="nav-caret">⌄</span></button><div class="nav-dropdown"><a href="analytics.html">Trends</a><a href="advanced-analytics.html">Advanced Analytics</a><a href="abnormal.html">Abnormal results</a></div></div>
                 <a href="dashboard.html">Help</a>
       </nav>
       <div class="app-header-right"><span class="demo-pill"><span class="live-dot"></span> DEMO</span><button class="profile-button" type="button" data-action="sign-out" aria-label="Sign out of demo session"><span class="profile-avatar">${htmlEscape(initials(displayName))}</span><span class="profile-meta"><b>${htmlEscape(displayName)}</b><small>${htmlEscape(role)}${user?.gender ? ` · ${htmlEscape(user.gender.split(" ")[0])}` : ""}</small></span><span class="nav-caret">⌄</span></button></div>`;
@@ -356,6 +403,10 @@
     if (field === "symptomId") return state.symptoms.find(record => record.id === value)?.name || "Unlinked";
     if (field === "specializationId") return state.specializations.find(record => record.id === value)?.name || "Unlinked";
     return value;
+  }
+
+  function isClinicalTest(test) {
+    return test && (!test.testSubgroup || test.testSubgroup === "Clinical");
   }
 
   function statusClass(status) {
@@ -425,6 +476,9 @@
   function displayValue(groupKey, record, field) {
     if (field === "status") return `<span class="status ${statusClass(record.status)}">${htmlEscape(record.status || "Active").toUpperCase()}</span>`;
     if (field === "specializationId" && !record.specializationId) return htmlEscape(record.specialization || "—");
+    if (field === "practiceIds") return htmlEscape((record.practiceIds || []).map(id => relationLabel("practiceId", id)).join(", ") || "—");
+    if (field === "testSubgroup") return htmlEscape(record.testSubgroup || "Clinical");
+    if (field === "parameterCount" && !isClinicalTest(record)) return "Not configured";
     if (field === "parameterId") return htmlEscape(relationLabel(field, record[field]));
     if (field === "sex") return htmlEscape(record.sex || "All");
     if (field === "ageRange") return htmlEscape(boundsText(record.ageFrom, record.ageTo, "Any age"));
@@ -463,14 +517,17 @@
     if (categoryWrap && categorySelect) {
       categoryWrap.hidden = activeGroup !== "parameters";
       const current = categorySelect.value;
-      categorySelect.innerHTML = `<option value="">All test categories</option>${state.tests.filter(item => item.status !== "Deleted").sort((a, b) => a.name.localeCompare(b.name)).map(item => `<option value="${htmlEscape(item.id)}">${htmlEscape(item.name)}</option>`).join("")}`;
+      categorySelect.innerHTML = `<option value="">All test categories</option>${state.tests.filter(item => item.status !== "Deleted" && isClinicalTest(item)).sort((a, b) => a.name.localeCompare(b.name)).map(item => `<option value="${htmlEscape(item.id)}">${htmlEscape(item.name)}</option>`).join("")}`;
       categorySelect.value = [...categorySelect.options].some(option => option.value === current) ? current : "";
     }
     const categoryFilter = activeGroup === "parameters" ? categorySelect?.value || "" : "";
+    const subgroupFilter = activeGroup === "tests" ? document.querySelector("[data-test-subgroup-filter]")?.value || "all" : "all";
+    const subgroupWrap = document.querySelector("[data-test-subgroup-wrap]");
+    if (subgroupWrap) subgroupWrap.hidden = activeGroup !== "tests";
     const records = state[activeGroup].filter(record => {
       const matchesSearch = `${record.id} ${Object.values(record).join(" ")}`.toLowerCase().includes(search);
       const matchesStatus = statusFilter === "all" || String(record.status).toLowerCase() === statusFilter;
-      return matchesSearch && matchesStatus && (!categoryFilter || record.testId === categoryFilter);
+      return matchesSearch && matchesStatus && (!categoryFilter || record.testId === categoryFilter) && (subgroupFilter === "all" || (record.testSubgroup || "Clinical") === subgroupFilter);
     });
     body.innerHTML = records.map(record => `<tr data-record-id="${htmlEscape(record.id)}">${definition.columns.map(([field]) => `<td${["description", "purpose", "address"].includes(field) ? ' class="wrap-cell"' : ""}>${displayValue(activeGroup, record, field)}</td>`).join("")}<td><div class="table-actions"><button class="table-action" type="button" data-record-action="view" data-id="${htmlEscape(record.id)}" aria-label="View ${htmlEscape(record.name)}">V</button>${canManage ? `<button class="table-action" type="button" data-record-action="edit" data-id="${htmlEscape(record.id)}" aria-label="Edit ${htmlEscape(record.name)}">E</button><button class="table-action delete" type="button" data-record-action="delete" data-id="${htmlEscape(record.id)}" aria-label="Delete ${htmlEscape(record.name)}"${record.status === "Deleted" ? " disabled" : ""}>D</button>` : ""}</div></td></tr>`).join("");
     document.querySelector("[data-record-count]").textContent = `${records.length} ${records.length === 1 ? "record" : "records"}`;
@@ -483,12 +540,13 @@
 
   function countOrphans() {
     const missingPractices = [...state.specializations, ...state.practitioners, ...state.interventionMethods].filter(item => item.status !== "Deleted" && !state.practiceTypes.some(parent => parent.id === item.practiceId && parent.status !== "Deleted")).length;
+    const missingPrescriptionPractices = state.prescriptionTypes.filter(item => item.status !== "Deleted").reduce((count, item) => count + (item.practiceIds || []).filter(id => !state.practiceTypes.some(parent => parent.id === id && parent.status !== "Deleted")).length, 0);
     const missingTests = state.parameters.filter(item => item.status !== "Deleted" && !state.tests.some(parent => parent.id === item.testId && parent.status !== "Deleted")).length;
     const missingVitals = state.vitals.filter(item => item.status !== "Deleted" && !state.vitalCategories.some(parent => parent.id === item.vitalCategoryId && parent.status !== "Deleted")).length;
     const missingSymptoms = state.symptomTests.filter(item => item.status !== "Deleted" && !state.symptoms.some(parent => parent.id === item.symptomId && parent.status !== "Deleted")).length;
     const missingBands = state.limitBands.filter(item => item.status !== "Deleted" && !measureById(item.parameterId)?.live).length;
     const missingFacilityTypes = state.facilities.filter(item => item.status !== "Deleted" && !state.facilityTypes.some(parent => parent.id === item.facilityTypeId && parent.status !== "Deleted")).length;
-    return missingPractices + missingTests + missingVitals + missingSymptoms + missingFacilityTypes + missingBands;
+    return missingPractices + missingPrescriptionPractices + missingTests + missingVitals + missingSymptoms + missingFacilityTypes + missingBands;
   }
 
   function makeField(field, value, disabled) {
@@ -496,6 +554,12 @@
     const isFull = field.full ? " full-width" : "";
     const val = value ?? "";
     let input;
+    if (field.type === "relations") {
+      const selected = Array.isArray(value) ? value : [];
+      const options = state[field.group].filter(item => item.status !== "Deleted" || selected.includes(item.id));
+      const choices = options.map(item => `<label class="symptom-option"><input type="checkbox" name="${field.key}" value="${htmlEscape(item.id)}"${selected.includes(item.id) ? " checked" : ""}${disabled ? " disabled" : ""}><span>${htmlEscape(item.name)}</span></label>`).join("");
+      return `<fieldset class="record-field symptom-picker${isFull}"><legend>${htmlEscape(field.label)}${field.required && !disabled ? " *" : ""}</legend><details><summary>Select practice types</summary><div class="symptom-options">${choices || '<p class="symptom-empty-options">No practice types available.</p>'}</div></details><p class="rx-hint">Select one or more practice types.</p></fieldset>`;
+    }
     if (field.type === "textarea") {
       input = `<textarea name="${field.key}"${required}${disabled ? " disabled" : ""}>${htmlEscape(val)}</textarea>`;
     } else if (field.type === "measure") {
@@ -503,7 +567,7 @@
       input = `<select name="${field.key}"${required}${disabled ? " disabled" : ""}><option value="">Select…</option>${group("Lab health parameters", state.parameters)}${group("Vitals", state.vitals)}</select>`;
     } else if (field.type === "select" || field.type === "relation") {
       const options = field.type === "relation"
-        ? state[field.group].filter(item => item.status !== "Deleted").map(item => [item.id, item.name])
+        ? state[field.group].filter(item => item.status !== "Deleted" && (field.group !== "tests" || isClinicalTest(item))).map(item => [item.id, item.name])
         : field.options.map(option => [option, option]);
       input = `<select name="${field.key}"${required}${disabled ? " disabled" : ""}><option value="">Select…</option>${options.map(([optionValue, label]) => `<option value="${htmlEscape(optionValue)}"${String(val) === String(optionValue) ? " selected" : ""}>${htmlEscape(label)}</option>`).join("")}</select>`;
     } else {
@@ -544,8 +608,8 @@
     document.querySelector("[data-record-submit]").closest("button").hidden = readOnly;
     error.hidden = true;
     // New parameters start in the category chosen in the filter.
-    const values = record || (mode === "add" && activeGroup === "parameters" ? { testId: document.querySelector("[data-category-select]")?.value || "" } : undefined);
-    fields.innerHTML = definition.fields.map(field => makeField(field, values?.[field.key], readOnly)).join("");
+    const values = record || (mode === "add" && activeGroup === "parameters" ? { testId: document.querySelector("[data-category-select]")?.value || "" } : mode === "add" && activeGroup === "tests" ? { testSubgroup: document.querySelector("[data-test-subgroup-filter]")?.value === "Interventional" ? "Interventional" : "Clinical" } : undefined);
+    fields.innerHTML = definition.fields.map(field => makeField(field, field.key === "testSubgroup" ? values?.testSubgroup || "Clinical" : values?.[field.key], readOnly || (activeGroup === "tests" && mode === "edit" && field.key === "testSubgroup"))).join("");
     if (activeGroup === "practitioners" && !readOnly) linkSpecializationToPractice(fields, record?.specializationId);
     if (readOnly) {
       fields.insertAdjacentHTML("beforeend", makeField({ key: "recordId", label: "Record ID" }, record.id, true));
@@ -562,13 +626,14 @@
   function masterUsage(groupKey, id) {
     const live = item => item.status !== "Deleted";
     const rules = {
-      practiceTypes: () => [["specializations", state.specializations.filter(item => item.practiceId === id && live(item))], ["practitioners", state.practitioners.filter(item => item.practiceId === id && live(item))], ["intervention methods", state.interventionMethods.filter(item => item.practiceId === id && live(item))]],
+      practiceTypes: () => [["specializations", state.specializations.filter(item => item.practiceId === id && live(item))], ["practitioners", state.practitioners.filter(item => item.practiceId === id && live(item))], ["intervention methods", state.interventionMethods.filter(item => item.practiceId === id && live(item))], ["prescription types", state.prescriptionTypes.filter(item => (item.practiceIds || []).includes(id) && live(item))]],
       specializations: () => [["practitioners", state.practitioners.filter(item => item.specializationId === id && live(item))]],
       facilityTypes: () => [["facilities", state.facilities.filter(item => item.facilityTypeId === id && live(item))]],
-      facilities: () => [["lab test records", state.labResults.filter(item => item.facilityId === id)]],
+      facilities: () => [["lab test records", state.labResults.filter(item => item.facilityId === id)], ["intervention reports", state.interventionReports.filter(item => item.facilityId === id)], ["inpatient admissions", state.ipdEncounters.filter(item => item.facilityId === id)]],
       parameters: () => [["limit bands", state.limitBands.filter(item => item.parameterId === id && live(item))], ["lab test records", state.labResults.filter(item => item.values.some(entry => entry.parameterId === id))]],
-      practitioners: () => [["prescriptions", state.prescriptions.filter(item => item.practitionerId === id)], ["intervention prescriptions", state.interventionPrescriptions.filter(item => item.practitionerId === id)], ["lab test records", state.labResults.filter(item => item.requestedBy === id)]],
-      tests: () => [["parameters", state.parameters.filter(item => item.testId === id && live(item))], ["prescription diagnoses", state.prescriptionDiagnoses.filter(item => item.testId === id)], ["lab test records", state.labResults.filter(item => item.testId === id)]],
+      practitioners: () => [["prescriptions", state.prescriptions.filter(item => item.practitionerId === id)], ["lab test records", state.labResults.filter(item => item.requestedBy === id)], ["intervention reports", state.interventionReports.filter(item => item.interventionistId === id || item.specialistId === id)], ["inpatient admissions", state.ipdEncounters.filter(item => item.practitionerId === id)]],
+      prescriptionTypes: () => [["prescriptions", state.prescriptions.filter(item => item.prescriptionTypeId === id)]],
+      tests: () => [["parameters", state.parameters.filter(item => item.testId === id && live(item))], ["prescription diagnoses", state.prescriptionDiagnoses.filter(item => item.testId === id)], ["lab test records", state.labResults.filter(item => item.testId === id)], ["intervention reports", state.interventionReports.filter(item => item.testId === id)]],
       vitalCategories: () => [["vitals", state.vitals.filter(item => item.vitalCategoryId === id && live(item))]],
       vitals: () => [["vitals readings", state.vitalReadings.filter(reading => reading.readings.some(entry => entry.vitalId === id))], ["limit bands", state.limitBands.filter(item => item.parameterId === id && live(item))]],
       symptoms: () => [["symptom tests", state.symptomTests.filter(item => item.symptomId === id && live(item))], ["symptom entries", loadSymptoms().filter(entry => Array.isArray(entry.symptoms) && entry.symptoms.some(symptom => symptom.id === id))]],
@@ -607,6 +672,33 @@
     const form = event.currentTarget;
     if (!form.reportValidity()) return;
     const data = Object.fromEntries(new FormData(form).entries());
+    if (activeGroup === "tests" && !editingRecordId && !["Clinical", "Interventional"].includes(data.testSubgroup)) {
+      const error = document.querySelector("[data-record-error]");
+      error.textContent = "Select a valid test subgroup.";
+      error.hidden = false;
+      return;
+    }
+    if (activeGroup === "prescriptionTypes") {
+      data.practiceIds = new FormData(form).getAll("practiceIds");
+      const error = document.querySelector("[data-record-error]");
+      if (!data.practiceIds.length || data.practiceIds.some(id => !state.practiceTypes.some(item => item.id === id && item.status !== "Deleted"))) {
+        error.textContent = "Select at least one available practice type.";
+        error.hidden = false;
+        return;
+      }
+      const name = data.name.trim();
+      if (!name) {
+        error.textContent = "Enter a prescription type.";
+        error.hidden = false;
+        return;
+      }
+      if (state.prescriptionTypes.some(item => item.id !== editingRecordId && item.status !== "Deleted" && item.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase())) {
+        error.textContent = "This prescription type already exists. Edit it to select additional practice types.";
+        error.hidden = false;
+        return;
+      }
+      data.name = name;
+    }
     const numericFields = groups[activeGroup].fields.filter(field => field.type === "number").map(field => field.key);
     for (const field of numericFields) {
       if (data[field] !== "") data[field] = Number(data[field]);
@@ -693,9 +785,9 @@
       const category = get("Category");
       const name = get("Parameter Name");
       if (!category || !name) continue;
-      let test = state.tests.find(item => item.name.toLowerCase() === category.toLowerCase() && item.status !== "Deleted");
+      let test = state.tests.find(item => isClinicalTest(item) && item.name.toLowerCase() === category.toLowerCase() && item.status !== "Deleted");
       if (!test) {
-        test = { id: createId("TEST"), name: category, description: "", status: "Active" };
+        test = { id: createId("TEST"), name: category, testSubgroup: "Clinical", description: "", status: "Active" };
         state.tests.push(test);
         counts.categories++;
       }
@@ -708,15 +800,13 @@
     return counts;
   }
 
-  // First run (or old sample data): replace the sample panels with the master CSV.
+  // Upsert the clinical catalogue without replacing existing tests or their linked records.
   async function ensureCatalog() {
     if (state.catalogVersion === CATALOG_VERSION) return false;
-    const backup = { tests: state.tests, parameters: state.parameters };
+    const backup = structuredClone({ tests: state.tests, parameters: state.parameters, catalogVersion: state.catalogVersion });
     try {
       const response = await fetch(CATALOG_URL, { cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      state.tests = [];
-      state.parameters = [];
       importCatalog(await response.text());
       if (!saveState()) throw new Error("save failed");
       return true;
@@ -724,6 +814,7 @@
       console.error("Unable to load the master health parameters CSV.", error);
       state.tests = backup.tests;
       state.parameters = backup.parameters;
+      state.catalogVersion = backup.catalogVersion;
       showToast("The master health parameters CSV could not be loaded automatically. Use Import CSV instead.", true);
       return false;
     }
@@ -910,7 +1001,7 @@
     const accessNote = document.querySelector("[data-master-access-note]");
     if (accessNote) accessNote.hidden = canManage;
     const search = (searchTerm || "").trim().toLowerCase();
-    const tests = state.tests.filter(test => test.status !== "Deleted" && test.name.toLowerCase().includes(search));
+    const tests = state.tests.filter(test => test.status !== "Deleted" && isClinicalTest(test) && test.name.toLowerCase().includes(search));
     if (!tests.some(test => test.id === activeTestId)) activeTestId = tests[0]?.id || "";
     document.querySelector("[data-test-count]").textContent = String(tests.length).padStart(2, "0");
     catalog.innerHTML = tests.map(test => {
@@ -1512,7 +1603,7 @@
   }
 
   function rxTestOptions(selected) {
-    const tests = state.tests.filter(item => item.status !== "Deleted").sort((a, b) => a.name.localeCompare(b.name));
+    const tests = state.tests.filter(item => item.status !== "Deleted" && isClinicalTest(item)).sort((a, b) => a.name.localeCompare(b.name));
     return `<option value="">Select test...</option>${tests.map(item => `<option value="${htmlEscape(item.id)}"${item.id === selected ? " selected" : ""}>${htmlEscape(item.name)}</option>`).join("")}`;
   }
 
@@ -1548,6 +1639,9 @@
     form.elements.issuedAt.value = nowLocalInput();
     document.querySelector("[data-rx-diagnoses]").innerHTML = "";
     document.querySelector("[data-rx-medications]").innerHTML = "";
+    document.querySelector("[data-iv-items]").innerHTML = "";
+    renderIvSymptoms();
+    fillRxTypes();
     document.querySelector("[data-rx-heading]").textContent = "Add Prescription";
     document.querySelector("[data-rx-submit]").textContent = "Save prescription";
     document.querySelector("[data-rx-cancel]").hidden = true;
@@ -1558,6 +1652,7 @@
     const select = document.querySelector("[data-rx-form]").elements.practitionerId;
     const list = state.practitioners.filter(item => item.status !== "Deleted" || item.id === selected);
     select.innerHTML = `<option value="">Select practitioner...</option>${list.map(item => `<option value="${htmlEscape(item.id)}"${item.id === selected ? " selected" : ""}>${htmlEscape(item.name)} · ${htmlEscape(relationLabel("specializationId", item.specializationId))}</option>`).join("")}`;
+    select.dataset.previousPractitioner = select.value;
     document.querySelector("[data-rx-practitioner-hint]").hidden = list.length > 0;
   }
 
@@ -1569,6 +1664,38 @@
     return `${med.drugName} · ${med.quantity} ${med.unit} · ${med.timings.join("/")} · ${med.mealQualifier}`;
   }
 
+  function isClinicalRx(rx) {
+    return (rx.typeName || "Clinical").trim().toLocaleLowerCase() === "clinical";
+  }
+
+  function fillRxTypes(existing = null) {
+    const form = document.querySelector("[data-rx-form]");
+    const select = form.elements.prescriptionTypeId;
+    const practitioner = state.practitioners.find(item => item.id === form.elements.practitionerId.value);
+    const types = state.prescriptionTypes.filter(item => item.status !== "Deleted" && practitioner && (item.practiceIds || []).includes(practitioner.practiceId)).sort((a, b) => a.name.localeCompare(b.name));
+    const previous = existing?.prescriptionTypeId || select.value;
+    select.innerHTML = `<option value="">Select prescription type...</option>${types.map(item => `<option value="${htmlEscape(item.id)}">${htmlEscape(item.name)}</option>`).join("")}`;
+    if (existing && !existing.prescriptionTypeId) {
+      select.insertAdjacentHTML("beforeend", `<option value="__legacy">${htmlEscape(existing.typeName || "Clinical")} (existing record)</option>`);
+      select.value = "__legacy";
+    } else if (existing && !types.some(item => item.id === previous)) {
+      select.insertAdjacentHTML("beforeend", `<option value="${htmlEscape(previous)}">${htmlEscape(existing.typeName)} (existing record; not available for this practice)</option>`);
+      select.value = previous;
+    } else select.value = previous;
+    select.disabled = Boolean(existing);
+    select.dataset.previousType = select.value;
+    document.querySelector("[data-rx-type-hint]").hidden = Boolean(practitioner && types.length);
+    updateRxTypeSections();
+  }
+
+  function updateRxTypeSections() {
+    const form = document.querySelector("[data-rx-form]");
+    const existing = editingRxId && state.prescriptions.find(item => item.id === editingRxId && item.patientId === patientKey());
+    const type = existing || state.prescriptionTypes.find(item => item.id === form.elements.prescriptionTypeId.value);
+    document.querySelector("[data-rx-clinical]").hidden = !type || !isClinicalRx(existing || { typeName: type.name });
+    document.querySelector("[data-rx-interventional]").hidden = !type || isClinicalRx(existing || { typeName: type.name });
+  }
+
   function renderPrescriptions() {
     const body = document.querySelector("[data-rx-body]");
     if (!body) return;
@@ -1578,13 +1705,13 @@
     body.innerHTML = list.map(item => {
       const dx = state.prescriptionDiagnoses.filter(child => child.prescriptionId === item.id).map(child => relationLabel("testId", child.testId));
       const meds = state.prescriptionMedications.filter(child => child.prescriptionId === item.id);
+      const interventions = state.interventionItems.filter(child => child.prescriptionId === item.id).map(child => `${ivMethodName(child.methodId)}${child.name ? ` — ${child.name}` : ""}`);
       const date = new Date(item.issuedAt);
       const list = values => values.length ? `<ul class="rx-list">${values.map(value => `<li>${htmlEscape(value)}</li>`).join("")}</ul>` : "—";
-      return `<tr><td>${htmlEscape(isNaN(date) ? item.issuedAt : formatter.format(date))}</td><td>${htmlEscape(rxPractitionerName(item.practitionerId))}</td><td class="wrap-cell">${list(dx)}</td><td class="wrap-cell">${list(meds.map(rxDescribeMed))}</td><td class="wrap-cell">${htmlEscape(item.notes)}</td><td><span class="status ${item.closed ? "status-warning" : "status-success"}">${item.closed ? "CLOSED" : "OPEN"}</span></td>${canEdit ? `<td><div class="table-actions"><button class="table-action" type="button" data-rx-view="${htmlEscape(item.id)}">View</button><button class="table-action" type="button" data-rx-edit="${htmlEscape(item.id)}">Edit</button><button class="table-action" type="button" data-rx-toggle="${htmlEscape(item.id)}">${item.closed ? "Reopen" : "Close"}</button><button class="table-action delete" type="button" data-rx-delete="${htmlEscape(item.id)}">Delete</button></div></td>` : ""}</tr>`;
+      return `<tr><td>${htmlEscape(isNaN(date) ? item.issuedAt : formatter.format(date))}</td><td>${htmlEscape(rxPractitionerName(item.practitionerId))}</td><td>${htmlEscape(item.typeName || "Clinical")}</td><td class="wrap-cell">${list(dx)}</td><td class="wrap-cell">${list([...meds.map(rxDescribeMed), ...interventions])}</td><td class="wrap-cell">${htmlEscape(item.notes)}</td><td><span class="status ${item.closed ? "status-warning" : "status-success"}">${item.closed ? "CLOSED" : "OPEN"}</span></td><td><div class="table-actions"><button class="table-action" type="button" data-rx-view="${htmlEscape(item.id)}">View</button>${canEdit ? `<button class="table-action" type="button" data-rx-edit="${htmlEscape(item.id)}">Edit</button><button class="table-action" type="button" data-rx-toggle="${htmlEscape(item.id)}">${item.closed ? "Reopen" : "Close"}</button><button class="table-action delete" type="button" data-rx-delete="${htmlEscape(item.id)}">Delete</button>` : ""}</div></td></tr>`;
     }).join("");
     document.querySelector("[data-rx-empty]").hidden = list.length > 0;
     document.querySelector("[data-rx-count]").textContent = `${list.length} ${list.length === 1 ? "prescription" : "prescriptions"}`;
-    document.querySelector("[data-rx-actions-head]").hidden = !canEdit;
   }
 
   function saveRx(event) {
@@ -1598,7 +1725,33 @@
     const notes = form.elements.notes.value.trim();
     if (!practitionerId || !issuedAt || !notes) return fail("Practitioner, date and time, and notes are required.");
     if (issuedAt > nowLocalInput()) return fail("Date and time cannot be in the future.");
-    const dxIds = [...form.querySelectorAll("[data-rx-diagnosis] select")].map(select => select.value);
+    const previousRx = editingRxId && state.prescriptions.find(item => item.id === editingRxId && item.patientId === patientKey());
+    if (editingRxId && !previousRx) return fail("This prescription is no longer available. Reload the page and try again.");
+    const type = state.prescriptionTypes.find(item => item.id === form.elements.prescriptionTypeId.value && item.status !== "Deleted");
+    const practitioner = state.practitioners.find(item => item.id === practitionerId);
+    if (!previousRx && (!type || !practitioner || !(type.practiceIds || []).includes(practitioner.practiceId))) return fail("Select a prescription type available for the practitioner's practice.");
+    if (previousRx && previousRx.practitionerId !== practitionerId && previousRx.prescriptionTypeId && (!type || !practitioner || !(type.practiceIds || []).includes(practitioner.practiceId))) return fail("The prescription type is not available for the selected practitioner's practice.");
+    const clinical = previousRx ? isClinicalRx(previousRx) : isClinicalRx({ typeName: type.name });
+    const ivItems = [];
+    let symptomEntries = [];
+    if (!clinical) {
+      const existing = state.interventionItems.filter(item => item.prescriptionId === editingRxId);
+      for (const row of form.querySelectorAll("[data-iv-item]")) {
+        const item = { id: row.dataset.ivItemId, methodId: row.querySelector('[name="ivMethodId"]').value, name: row.querySelector('[name="ivName"]').value.trim() };
+        if (!item.methodId) return fail("Select an intervention method in every row.");
+        if (!item.name && !existing.some(old => old.id === item.id && !old.name)) return fail("Enter an intervention name in every new row.");
+        ivItems.push(item);
+      }
+      if (!ivItems.length) return fail("Add at least one intervention.");
+      if (existing.some(item => state.interventionReports.some(report => report.interventionItemId === item.id) && !ivItems.some(current => current.id === item.id && current.methodId === item.methodId && current.name === (item.name || "")))) return fail("An intervention linked to a report cannot be removed or changed. Relink or delete the report first.");
+      if (previousRx && previousRx.practitionerId !== practitionerId && existing.some(item => state.interventionReports.some(report => report.interventionItemId === item.id))) return fail("The prescribing practitioner cannot be changed while intervention reports refer to this prescription. Relink or delete the reports first.");
+      const itemKeys = ivItems.map(item => JSON.stringify([item.methodId, item.name.toLocaleLowerCase()]));
+      if (new Set(itemKeys).size !== itemKeys.length) return fail("The same intervention method and name are entered more than once.");
+      const available = [...(previousRx?.symptomEntries || []), ...mySymptoms()];
+      symptomEntries = [...form.querySelectorAll('[name="ivSymptomId"]:checked')].map(input => available.find(entry => entry.id === input.value));
+      if (symptomEntries.some(entry => !entry)) return fail("A selected symptom entry is no longer available. Refresh and select it again.");
+    }
+    const dxIds = clinical ? [...form.querySelectorAll("[data-rx-diagnosis] select")].map(select => select.value) : [];
     if (dxIds.some(value => !value)) return fail("Select a test for every diagnosis row, or remove the empty row.");
     if (new Set(dxIds).size !== dxIds.length) return fail("The same diagnosis is selected more than once.");
     if (editingRxId) {
@@ -1608,7 +1761,7 @@
       if (moved) return fail("Lab results are recorded against this prescription, so its practitioner cannot be changed. Delete those lab results first.");
     }
     const meds = [];
-    for (const row of form.querySelectorAll("[data-rx-medication]")) {
+    for (const row of clinical ? form.querySelectorAll("[data-rx-medication]") : []) {
       const med = {
         drugName: row.querySelector('[name="medName"]').value.trim(),
         quantity: Number(row.querySelector('[name="medQty"]').value),
@@ -1625,25 +1778,26 @@
       if (blocked) return fail(`${blocked.drugName} (${blocked.timing}) already has a taken-dose log. Delete that log from the dashboard before removing this medication or time of day.`);
     }
     error.hidden = true;
-    const snapshot = { p: [...state.prescriptions], d: [...state.prescriptionDiagnoses], m: [...state.prescriptionMedications], l: state.medicationLogs.map(log => log.practitionerId) };
-    const previousRx = editingRxId && state.prescriptions.find(item => item.id === editingRxId && item.patientId === patientKey());
-    if (editingRxId && !previousRx) return fail("This prescription is no longer available. Reload the page and try again.");
+    const snapshot = { p: [...state.prescriptions], d: [...state.prescriptionDiagnoses], m: [...state.prescriptionMedications], i: [...state.interventionItems], l: state.medicationLogs.map(log => log.practitionerId) };
     const id = editingRxId || createId("RX");
     const wasEditing = Boolean(editingRxId);
     if (wasEditing) {
       state.prescriptions = state.prescriptions.filter(item => item.id !== id);
       state.prescriptionDiagnoses = state.prescriptionDiagnoses.filter(item => item.prescriptionId !== id);
       state.prescriptionMedications = state.prescriptionMedications.filter(item => item.prescriptionId !== id);
+      state.interventionItems = state.interventionItems.filter(item => item.prescriptionId !== id);
       state.medicationLogs.filter(log => log.prescriptionId === id).forEach(log => { log.practitionerId = practitionerId; });
     }
     const keys = { prescriptionId: id, patientId: patientKey(), practitionerId };
-    state.prescriptions.push({ id, patientId: patientKey(), practitionerId, issuedAt, notes, closed: Boolean(previousRx?.closed) });
+    state.prescriptions.push({ ...(previousRx || {}), id, patientId: patientKey(), practitionerId, issuedAt, notes, closed: Boolean(previousRx?.closed), prescriptionTypeId: previousRx ? previousRx.prescriptionTypeId || "" : type.id, typeName: previousRx?.typeName || type.name, symptomEntries: symptomEntries.map(entry => ({ id: entry.id, recordedAt: entry.recordedAt, severity: entry.severity, symptoms: entry.symptoms, description: entry.description })) });
     dxIds.forEach(testId => state.prescriptionDiagnoses.push({ id: createId("RXDX"), ...keys, testId }));
     meds.forEach(med => state.prescriptionMedications.push({ ...keys, ...med, id: med.id || createId("RXMED") }));
+    ivItems.forEach(item => state.interventionItems.push({ ...keys, ...item, id: item.id || createId("IVITEM") }));
     if (!saveState()) {
       state.prescriptions = snapshot.p;
       state.prescriptionDiagnoses = snapshot.d;
       state.prescriptionMedications = snapshot.m;
+      state.interventionItems = snapshot.i;
       state.medicationLogs.forEach((log, index) => { log.practitionerId = snapshot.l[index]; });
       return;
     }
@@ -1660,10 +1814,13 @@
     resetRxForm();
     editingRxId = id;
     fillRxPractitioners(item.practitionerId);
+    fillRxTypes(item);
     form.elements.issuedAt.value = item.issuedAt;
     form.elements.notes.value = item.notes;
     state.prescriptionDiagnoses.filter(child => child.prescriptionId === id).forEach(child => addDiagnosisRow(child.testId));
     state.prescriptionMedications.filter(child => child.prescriptionId === id).forEach(addMedicationRow);
+    renderIvSymptoms(item.symptomEntries || []);
+    state.interventionItems.filter(child => child.prescriptionId === id).forEach(addInterventionRow);
     document.querySelector("[data-rx-heading]").textContent = "Edit Prescription";
     document.querySelector("[data-rx-submit]").textContent = "Update prescription";
     document.querySelector("[data-rx-cancel]").hidden = false;
@@ -1675,14 +1832,17 @@
     if (!item) return;
     const dx = state.prescriptionDiagnoses.filter(child => child.prescriptionId === id);
     const meds = state.prescriptionMedications.filter(child => child.prescriptionId === id);
+    const interventions = state.interventionItems.filter(child => child.prescriptionId === id);
     const date = new Date(item.issuedAt);
     const master = [
       ["Prescription ID", item.id],
       ["Patient ID", item.patientId],
       ["Practitioner", `${rxPractitionerName(item.practitionerId)} (${item.practitionerId})`],
+      ["Prescription type", item.typeName || "Clinical"],
       ["Date and time", isNaN(date) ? item.issuedAt : new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date)],
       ["Status", item.closed ? "Closed" : "Open"],
-      ["Notes", item.notes]
+      ["Notes", item.notes],
+      ["Related symptom entries", (item.symptomEntries || []).map(ivSymptomLabel).join("; ")]
     ];
     let dialog = document.querySelector("[data-details-dialog]");
     if (!dialog) {
@@ -1700,6 +1860,8 @@
       <div class="rx-view-box">${table(["Diagnosis (test)"], dx.map(child => [relationLabel("testId", child.testId)]))}</div>
       <h3 class="rx-view-title">Medications (${meds.length})</h3>
       <div class="rx-view-box">${table(["Drug", "Qty", "Unit", "When", "Meal"], meds.map(med => [med.drugName, med.quantity, med.unit, med.timings.join(", "), med.mealQualifier]))}</div>
+      <h3 class="rx-view-title">Interventions (${interventions.length})</h3>
+      <div class="rx-view-box">${table(["Intervention Method", "Intervention name"], interventions.map(child => [ivMethodName(child.methodId), child.name || "—"]))}</div>
       <div class="symptom-actions"><button type="button" class="button button-primary" data-close-details>Close</button></div></div>`;
     dialog.classList.add("rx-dialog");
     dialog.addEventListener("close", () => dialog.classList.remove("rx-dialog"), { once: true });
@@ -1712,7 +1874,7 @@
     const item = state.prescriptions.find(entry => entry.id === id && entry.patientId === patientKey());
     if (!item) return showToast("This prescription is no longer available.", true);
     const closing = !item.closed;
-    const message = closing
+    const message = !isClinicalRx(item) ? `${closing ? "Close" : "Reopen"} this prescription?` : closing
       ? "Close this prescription? Its medications will no longer appear in the schedule. Older prescriptions will not restart automatically."
       : "Reopen this prescription? Its medications appear only if it is the latest prescription from this practitioner.";
     if (!window.confirm(message)) return;
@@ -1728,19 +1890,22 @@
 
   function deleteRx(id) {
     if (!requirePatientProfile()) return;
+    if (state.interventionReports.some(report => state.interventionItems.some(item => item.prescriptionId === id && item.id === report.interventionItemId))) return showToast("Cannot delete this prescription while intervention reports refer to it. Relink or delete the reports first.", true);
     const loggedDoses = state.medicationLogs.filter(log => log.prescriptionId === id).length;
     if (loggedDoses) return showToast(`Cannot delete this prescription: ${loggedDoses} taken-dose ${loggedDoses === 1 ? "log depends" : "logs depend"} on it. Delete those logs first.`, true);
     const labCount = state.labResults.filter(lab => lab.prescriptionId === id).length;
     if (labCount) return showToast(`Cannot delete this prescription: ${labCount} lab test ${labCount === 1 ? "record was" : "records were"} requested through it. Delete those first.`, true);
-    if (!window.confirm("Delete this prescription with its diagnoses and medications?")) return;
-    const snapshot = { p: state.prescriptions, d: state.prescriptionDiagnoses, m: state.prescriptionMedications };
+    if (!window.confirm("Delete this prescription and its associated details?")) return;
+    const snapshot = { p: state.prescriptions, d: state.prescriptionDiagnoses, m: state.prescriptionMedications, i: state.interventionItems };
     state.prescriptions = state.prescriptions.filter(item => item.id !== id);
     state.prescriptionDiagnoses = state.prescriptionDiagnoses.filter(item => item.prescriptionId !== id);
     state.prescriptionMedications = state.prescriptionMedications.filter(item => item.prescriptionId !== id);
+    state.interventionItems = state.interventionItems.filter(item => item.prescriptionId !== id);
     if (!saveState()) {
       state.prescriptions = snapshot.p;
       state.prescriptionDiagnoses = snapshot.d;
       state.prescriptionMedications = snapshot.m;
+      state.interventionItems = snapshot.i;
       return;
     }
     if (editingRxId === id) resetRxForm();
@@ -1753,7 +1918,6 @@
     const canEdit = canManageRecords();
     document.querySelector("[data-rx-form-card]").hidden = !canEdit;
     document.querySelector("[data-rx-access-note]").hidden = canEdit;
-    document.querySelector("[data-rx-actions-head]").hidden = !canEdit;
     const form = document.querySelector("[data-rx-form]");
     const datalist = document.createElement("datalist");
     datalist.id = "rx-unit-list";
@@ -1763,9 +1927,51 @@
     fillRxPractitioners("");
     resetRxForm();
     form.addEventListener("submit", saveRx);
+    form.elements.practitionerId.addEventListener("change", () => {
+      const practitionerSelect = form.elements.practitionerId;
+      if (!editingRxId && practitionerSelect.value !== practitionerSelect.dataset.previousPractitioner && form.querySelector("[data-rx-diagnosis], [data-rx-medication], [data-iv-item], [name='ivSymptomId']:checked")) {
+        if (!window.confirm("Changing practitioner will clear the current diagnosis, medication, intervention and symptom selections. Continue?")) {
+          practitionerSelect.value = practitionerSelect.dataset.previousPractitioner;
+          return;
+        }
+        document.querySelector("[data-rx-diagnoses]").innerHTML = "";
+        document.querySelector("[data-rx-medications]").innerHTML = "";
+        document.querySelector("[data-iv-items]").innerHTML = "";
+        renderIvSymptoms();
+      }
+      practitionerSelect.dataset.previousPractitioner = practitionerSelect.value;
+      const existing = editingRxId && state.prescriptions.find(item => item.id === editingRxId && item.patientId === patientKey());
+      fillRxTypes(existing);
+    });
+    form.elements.prescriptionTypeId.addEventListener("change", () => {
+      const select = form.elements.prescriptionTypeId;
+      const before = state.prescriptionTypes.find(item => item.id === select.dataset.previousType);
+      const after = state.prescriptionTypes.find(item => item.id === select.value);
+      if (before && after && isClinicalRx({ typeName: before.name }) !== isClinicalRx({ typeName: after.name })) {
+        const hasDetails = form.querySelector("[data-rx-diagnosis], [data-rx-medication], [data-iv-item], [name='ivSymptomId']:checked");
+        if (hasDetails && !window.confirm("Changing type will clear the current diagnosis, medication, intervention and symptom selections. Continue?")) {
+          select.value = select.dataset.previousType;
+          return;
+        }
+        document.querySelector("[data-rx-diagnoses]").innerHTML = "";
+        document.querySelector("[data-rx-medications]").innerHTML = "";
+        document.querySelector("[data-iv-items]").innerHTML = "";
+        renderIvSymptoms();
+      }
+      if (select.value) select.dataset.previousType = select.value;
+      updateRxTypeSections();
+    });
+    form.querySelector("[data-iv-symptom-filter]").addEventListener("input", () => {
+      const selectedIds = new Set([...form.querySelectorAll('[name="ivSymptomId"]:checked')].map(input => input.value));
+      const previous = state.prescriptions.find(item => item.id === editingRxId && item.patientId === patientKey());
+      const available = [...(previous?.symptomEntries || []), ...mySymptoms()];
+      renderIvSymptoms([...selectedIds].map(id => available.find(entry => entry.id === id)).filter(Boolean));
+    });
     document.addEventListener("click", event => {
       if (event.target.closest("[data-rx-add-diagnosis]")) addDiagnosisRow("");
       else if (event.target.closest("[data-rx-add-medication]")) addMedicationRow();
+      else if (event.target.closest("[data-iv-add]")) addInterventionRow();
+      else if (event.target.closest("[data-iv-remove]")) event.target.closest("[data-iv-item]").remove();
       else if (event.target.closest("[data-rx-remove]")) event.target.closest("[data-rx-diagnosis], [data-rx-medication]").remove();
       else if (event.target.closest("[data-rx-cancel]")) resetRxForm();
       const view = event.target.closest("[data-rx-view]");
@@ -1784,186 +1990,42 @@
     renderPrescriptions();
   }
 
-  let editingIvId = null;
 
   function ivMethodOptions(selected) {
     const methods = state.interventionMethods.filter(item => item.status !== "Deleted" || item.id === selected).sort((a, b) => a.name.localeCompare(b.name));
-    return `<option value="">Select intervention...</option>${methods.map(item => `<option value="${htmlEscape(item.id)}"${item.id === selected ? " selected" : ""}>${htmlEscape(item.name)} · ${htmlEscape(relationLabel("practiceId", item.practiceId))}</option>`).join("")}`;
+    return `<option value="">Select intervention method...</option>${methods.map(item => `<option value="${htmlEscape(item.id)}"${item.id === selected ? " selected" : ""}>${htmlEscape(item.name)} · ${htmlEscape(relationLabel("practiceId", item.practiceId))}</option>`).join("")}`;
   }
 
   function ivMethodName(id) {
     return state.interventionMethods.find(item => item.id === id)?.name || "Unknown";
   }
 
-  function addInterventionRow(methodId) {
+  function addInterventionRow(item = {}) {
     const row = document.createElement("div");
-    row.className = "rx-row";
+    row.className = "rx-row iv-row";
     row.dataset.ivItem = "";
-    row.innerHTML = `<label class="form-field">Intervention<select name="ivMethodId" aria-label="Intervention">${ivMethodOptions(methodId)}</select></label><button type="button" class="button button-secondary button-compact" data-iv-remove>Remove intervention</button>`;
+    row.dataset.ivItemId = item.id || "";
+    row.innerHTML = `<label class="form-field">Intervention Method<select name="ivMethodId">${ivMethodOptions(item.methodId)}</select></label><label class="form-field">Intervention name<input type="text" name="ivName" maxlength="200" value="${htmlEscape(item.name || "")}" placeholder="Clinical name of intervention"></label><button type="button" class="button button-secondary button-compact" data-iv-remove>Remove intervention</button>`;
     document.querySelector("[data-iv-items]").append(row);
   }
 
-  function resetIvForm() {
-    const form = document.querySelector("[data-iv-form]");
-    editingIvId = null;
-    form.reset();
-    form.elements.issuedAt.value = nowLocalInput();
-    document.querySelector("[data-iv-items]").innerHTML = "";
-    document.querySelector("[data-iv-heading]").textContent = "Add Intervention Prescription";
-    document.querySelector("[data-iv-submit]").textContent = "Save prescription";
-    document.querySelector("[data-iv-cancel]").hidden = true;
-    document.querySelector("[data-iv-error]").hidden = true;
+  function ivSymptomLabel(entry) {
+    const symptoms = Array.isArray(entry.symptoms) && entry.symptoms.length ? entry.symptoms.map(symptom => symptom.name).join(", ") : entry.description || "Symptoms unavailable";
+    return `${formatDateTime(entry.recordedAt)} — ${symptoms}${entry.severity ? ` (${entry.severity})` : ""}`;
   }
 
-  function fillIvPractitioners(selected) {
-    const select = document.querySelector("[data-iv-form]").elements.practitionerId;
-    const list = state.practitioners.filter(item => item.status !== "Deleted" || item.id === selected);
-    select.innerHTML = `<option value="">Select practitioner...</option>${list.map(item => `<option value="${htmlEscape(item.id)}"${item.id === selected ? " selected" : ""}>${htmlEscape(item.name)} · ${htmlEscape(relationLabel("specializationId", item.specializationId))}</option>`).join("")}`;
-    document.querySelector("[data-iv-practitioner-hint]").hidden = list.length > 0;
-  }
-
-  function renderInterventions() {
-    const body = document.querySelector("[data-iv-body]");
-    if (!body) return;
-    const canEdit = canManageRecords();
-    const list = state.interventionPrescriptions.filter(item => item.patientId === patientKey()).sort((a, b) => b.issuedAt.localeCompare(a.issuedAt));
-    const formatter = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
-    body.innerHTML = list.map(item => {
-      const names = state.interventionItems.filter(child => child.interventionPrescriptionId === item.id).map(child => ivMethodName(child.methodId));
-      const date = new Date(item.issuedAt);
-      const items = names.length ? `<ul class="rx-list">${names.map(name => `<li>${htmlEscape(name)}</li>`).join("")}</ul>` : "—";
-      return `<tr><td>${htmlEscape(isNaN(date) ? item.issuedAt : formatter.format(date))}</td><td>${htmlEscape(rxPractitionerName(item.practitionerId))}</td><td class="wrap-cell">${items}</td><td class="wrap-cell">${htmlEscape(item.notes)}</td>${canEdit ? `<td><div class="table-actions"><button class="table-action" type="button" data-iv-view="${htmlEscape(item.id)}">View</button><button class="table-action" type="button" data-iv-edit="${htmlEscape(item.id)}">Edit</button><button class="table-action delete" type="button" data-iv-delete="${htmlEscape(item.id)}">Delete</button></div></td>` : ""}</tr>`;
-    }).join("");
-    document.querySelector("[data-iv-empty]").hidden = list.length > 0;
-    document.querySelector("[data-iv-count]").textContent = `${list.length} ${list.length === 1 ? "prescription" : "prescriptions"}`;
-    document.querySelector("[data-iv-actions-head]").hidden = !canEdit;
-  }
-
-  function saveIv(event) {
-    event.preventDefault();
-    if (!requirePatientProfile()) return;
-    const form = event.currentTarget;
-    const error = document.querySelector("[data-iv-error]");
-    const fail = message => { error.textContent = message; error.hidden = false; };
-    const practitionerId = form.elements.practitionerId.value;
-    const issuedAt = form.elements.issuedAt.value;
-    const notes = form.elements.notes.value.trim();
-    if (!practitionerId || !issuedAt || !notes) return fail("Practitioner, date and time, and notes are required.");
-    if (issuedAt > nowLocalInput()) return fail("Date and time cannot be in the future.");
-    const methodIds = [...form.querySelectorAll("[data-iv-item] select")].map(select => select.value);
-    if (!methodIds.length) return fail("Add at least one intervention.");
-    if (methodIds.some(value => !value)) return fail("Select an intervention in every row, or remove the empty row.");
-    if (new Set(methodIds).size !== methodIds.length) return fail("The same intervention is selected more than once.");
-    error.hidden = true;
-    const snapshot = { p: [...state.interventionPrescriptions], i: [...state.interventionItems] };
-    const id = editingIvId || createId("IVRX");
-    const wasEditing = Boolean(editingIvId);
-    if (wasEditing) {
-      state.interventionPrescriptions = state.interventionPrescriptions.filter(item => item.id !== id);
-      state.interventionItems = state.interventionItems.filter(item => item.interventionPrescriptionId !== id);
-    }
-    state.interventionPrescriptions.push({ id, patientId: patientKey(), practitionerId, issuedAt, notes });
-    methodIds.forEach(methodId => state.interventionItems.push({ id: createId("IVITEM"), interventionPrescriptionId: id, patientId: patientKey(), practitionerId, methodId }));
-    if (!saveState()) {
-      state.interventionPrescriptions = snapshot.p;
-      state.interventionItems = snapshot.i;
-      return;
-    }
-    resetIvForm();
-    renderInterventions();
-    showToast(wasEditing ? "Intervention prescription updated." : "Intervention prescription saved.");
-  }
-
-  function editIv(id) {
-    if (!requirePatientProfile()) return;
-    const item = state.interventionPrescriptions.find(entry => entry.id === id);
-    if (!item) return;
-    const form = document.querySelector("[data-iv-form]");
-    resetIvForm();
-    editingIvId = id;
-    fillIvPractitioners(item.practitionerId);
-    form.elements.issuedAt.value = item.issuedAt;
-    form.elements.notes.value = item.notes;
-    state.interventionItems.filter(child => child.interventionPrescriptionId === id).forEach(child => addInterventionRow(child.methodId));
-    document.querySelector("[data-iv-heading]").textContent = "Edit Intervention Prescription";
-    document.querySelector("[data-iv-submit]").textContent = "Update prescription";
-    document.querySelector("[data-iv-cancel]").hidden = false;
-    form.scrollIntoView({ block: "start" });
-  }
-
-  function viewIv(id) {
-    const item = state.interventionPrescriptions.find(entry => entry.id === id);
-    if (!item) return;
-    const children = state.interventionItems.filter(child => child.interventionPrescriptionId === id);
-    const date = new Date(item.issuedAt);
-    const master = [
-      ["Prescription ID", item.id],
-      ["Patient ID", item.patientId],
-      ["Practitioner", `${rxPractitionerName(item.practitionerId)} (${item.practitionerId})`],
-      ["Date and time", isNaN(date) ? item.issuedAt : new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date)],
-      ["Notes", item.notes]
-    ];
-    let dialog = document.querySelector("[data-details-dialog]");
-    if (!dialog) {
-      dialog = document.createElement("dialog");
-      dialog.className = "record-dialog";
-      dialog.dataset.detailsDialog = "";
-      document.body.append(dialog);
-    }
-    const rows = children.map(child => {
-      const method = state.interventionMethods.find(entry => entry.id === child.methodId);
-      return `<tr><td>${htmlEscape(method?.name || "Unknown")}</td><td>${htmlEscape(method ? relationLabel("practiceId", method.practiceId) : "—")}</td></tr>`;
-    }).join("");
-    dialog.innerHTML = `<div class="record-form"><h2>Intervention prescription</h2>
-      <section class="rx-view-box"><dl class="details-list">${master.map(([label, value]) => `<div><dt>${htmlEscape(label)}</dt><dd>${htmlEscape(value || "—")}</dd></div>`).join("")}</dl></section>
-      <h3 class="rx-view-title">Interventions (${children.length})</h3>
-      <div class="rx-view-box"><table class="data-table rx-mini"><thead><tr><th>Intervention</th><th>Practice type</th></tr></thead><tbody>${rows}</tbody></table></div>
-      <div class="symptom-actions"><button type="button" class="button button-primary" data-close-details>Close</button></div></div>`;
-    dialog.classList.add("rx-dialog");
-    dialog.addEventListener("close", () => dialog.classList.remove("rx-dialog"), { once: true });
-    dialog.querySelector("[data-close-details]").addEventListener("click", () => dialog.close());
-    dialog.showModal();
-  }
-
-  function deleteIv(id) {
-    if (!requirePatientProfile()) return;
-    if (!window.confirm("Delete this intervention prescription with its interventions?")) return;
-    const snapshot = { p: state.interventionPrescriptions, i: state.interventionItems };
-    state.interventionPrescriptions = state.interventionPrescriptions.filter(item => item.id !== id);
-    state.interventionItems = state.interventionItems.filter(item => item.interventionPrescriptionId !== id);
-    if (!saveState()) {
-      state.interventionPrescriptions = snapshot.p;
-      state.interventionItems = snapshot.i;
-      return;
-    }
-    if (editingIvId === id) resetIvForm();
-    renderInterventions();
-    showToast("Intervention prescription deleted.");
-  }
-
-  function initInterventions() {
-    renderAppHeader("interventions");
-    const canEdit = canManageRecords();
-    document.querySelector("[data-iv-form-card]").hidden = !canEdit;
-    document.querySelector("[data-iv-access-note]").hidden = canEdit;
-    document.querySelector("[data-iv-actions-head]").hidden = !canEdit;
-    const form = document.querySelector("[data-iv-form]");
-    form.elements.issuedAt.max = nowLocalInput();
-    fillIvPractitioners("");
-    resetIvForm();
-    form.addEventListener("submit", saveIv);
-    document.addEventListener("click", event => {
-      if (event.target.closest("[data-iv-add]")) addInterventionRow("");
-      else if (event.target.closest("[data-iv-remove]")) event.target.closest("[data-iv-item]").remove();
-      else if (event.target.closest("[data-iv-cancel]")) resetIvForm();
-      const view = event.target.closest("[data-iv-view]");
-      if (view) viewIv(view.dataset.ivView);
-      const edit = event.target.closest("[data-iv-edit]");
-      if (edit) editIv(edit.dataset.ivEdit);
-      const del = event.target.closest("[data-iv-delete]");
-      if (del) deleteIv(del.dataset.ivDelete);
-    });
-    renderInterventions();
+  function renderIvSymptoms(selected = []) {
+    const box = document.querySelector("[data-iv-symptoms]");
+    const entries = mySymptoms().sort((a, b) => b.recordedAt.localeCompare(a.recordedAt));
+    const byId = new Map(selected.map(entry => [entry.id, entry]));
+    const selectedIds = new Set(byId.keys());
+    const options = entries.map(entry => byId.get(entry.id) || entry);
+    selected.filter(entry => !entries.some(current => current.id === entry.id)).forEach(entry => options.push(entry));
+    const term = document.querySelector("[data-iv-symptom-filter]").value.trim().toLowerCase();
+    box.innerHTML = options.map(entry => {
+      const label = ivSymptomLabel(entry);
+      return `<label class="symptom-option"${term && !label.toLowerCase().includes(term) && !selectedIds.has(entry.id) ? " hidden" : ""}><input type="checkbox" name="ivSymptomId" value="${htmlEscape(entry.id)}"${selectedIds.has(entry.id) ? " checked" : ""}><span>${htmlEscape(label)}</span></label>`;
+    }).join("") || '<p class="symptom-empty-options">No symptom entries recorded yet. <a href="symptoms.html">Record symptoms</a> first.</p>';
   }
 
   function todayInput() {
@@ -1975,16 +2037,413 @@
     return isNaN(date) ? value : new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
   }
 
-  // Latest prescription of each practitioner for this patient drives the daily schedule.
-  function medicationSchedule(day) {
+  const REPORT_TEMPLATES = {
+    vasculitis: [
+      ["Autoantibodies", "MPO-ANCA", "numeric"], ["Autoantibodies", "PR3-ANCA", "numeric"],
+      ["Autoantibodies", "ANCA IFA Pattern", "coded"], ["Autoantibodies", "ANCA IFA Titer", "text"],
+      ["Autoantibodies", "Anti-GBM Antibody", "numeric"], ["Complement", "Complement C3", "numeric"],
+      ["Complement", "Complement C4", "numeric"], ["Autoantibodies", "ANA Screen / Titer", "text"],
+      ["Autoantibodies", "Anti-dsDNA", "numeric"], ["Inflammatory Markers", "CRP", "numeric"], ["Inflammatory Markers", "ESR", "numeric"]
+    ],
+    immunotyping: [
+      ["Electrophoresis Fractions", "Serum Total Protein", "numeric"], ["Electrophoresis Fractions", "Albumin", "numeric"],
+      ["Electrophoresis Fractions", "Alpha-1", "numeric"], ["Electrophoresis Fractions", "Alpha-2", "numeric"],
+      ["Electrophoresis Fractions", "Beta-1", "numeric"], ["Electrophoresis Fractions", "Beta-2", "numeric"],
+      ["Electrophoresis Fractions", "Gamma Globulin", "numeric"], ["Electrophoresis Fractions", "M-Spike", "numeric"],
+      ["Immunosubtraction / Chains", "Heavy Chain Identified", "coded"], ["Immunosubtraction / Chains", "Light Chain Identified", "coded"],
+      ["Immunosubtraction / Chains", "Pattern / Interpretation", "text"]
+    ],
+    biopsy: [
+      ["Specimen Adequacy", "Total Glomeruli Sampled", "numeric"], ["Specimen Adequacy", "Globally Sclerotic Glomeruli", "numeric"],
+      ["Specimen Adequacy", "Segmentally Sclerotic Glomeruli", "numeric"], ["Specimen Adequacy", "Cellular / Fibrocellular Crescents Count", "numeric"],
+      ["Light Microscopy", "Glomeruli Findings", "text"], ["Light Microscopy", "Tubules & Interstitium", "text"], ["Light Microscopy", "Blood Vessels", "text"],
+      ...["IgG", "IgA", "IgM", "C3", "C1q", "Kappa", "Lambda", "Fibrinogen"].map(name => ["Immunofluorescence", `IF ${name}`, "scale"]),
+      ["Immunofluorescence", "IF Staining Pattern", "text"], ["Electron Microscopy", "GBM Thickness / Alterations", "text"],
+      ["Electron Microscopy", "Podocyte Foot Process Effacement", "coded"], ["Electron Microscopy", "Electron-Dense Deposits Location", "text"]
+    ]
+  };
+  const REPORT_TYPES = [["numeric", "Numeric"], ["coded", "Coded / qualitative"], ["scale", "Semi-quantitative scale"], ["text", "Text / narrative"]];
+  let editingReportId = null;
+
+  function formatReportDate(value) {
+    if (!value) return "—";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(`${value}T00:00`));
+    }
+    return formatDateTime(value);
+  }
+
+  function reportOptionList(list, selected, placeholder, label) {
+    return `<option value="">${htmlEscape(placeholder)}</option>${list.map(item => `<option value="${htmlEscape(item.id)}"${item.id === selected ? " selected" : ""}>${htmlEscape(label(item))}</option>`).join("")}`;
+  }
+
+  const IPD_FIELDS = ["facilityId", "practitionerId", "admissionDate", "admissionTime", "admissionType", "admissionSource", "admittingDiagnosis", "admittingCode", "ward", "room", "bed", "status", "chiefComplaint", "dischargeDate", "dischargeTime", "disposition", "finalDiagnosis", "finalCode", "dischargeSummary", "followUp"];
+  let editingEncounterId = null;
+
+  function resetInpatientForm() {
+    const form = document.querySelector("[data-ipd-form]");
+    editingEncounterId = null;
+    form.reset();
+    form.elements.facilityId.innerHTML = reportOptionList(state.facilities.filter(item => item.status !== "Deleted"), "", "Select facility...", item => item.name);
+    form.elements.practitionerId.innerHTML = reportOptionList(state.practitioners.filter(item => item.status !== "Deleted"), "", "Not recorded", item => item.name);
+    document.querySelector("[data-ipd-heading]").textContent = "Add admission";
+    document.querySelector("[data-ipd-submit]").textContent = "Save admission";
+    document.querySelector("[data-ipd-cancel]").hidden = true;
+    document.querySelector("[data-ipd-error]").hidden = true;
+  }
+
+  function inpatientDate(date, time) {
+    return date ? formatReportDate(date + (time ? `T${time}` : "")) : "—";
+  }
+
+  function renderInpatient() {
+    const entries = state.ipdEncounters.filter(item => item.patientId === patientKey()).sort((a, b) => b.admissionDate.localeCompare(a.admissionDate) || (b.admissionTime || "").localeCompare(a.admissionTime || "") || b.createdAt.localeCompare(a.createdAt));
+    const editable = canManageRecords();
+    document.querySelector("[data-ipd-body]").innerHTML = entries.map(item => {
+      const facility = state.facilities.find(entry => entry.id === item.facilityId)?.name || "Unknown facility";
+      return `<tr><td>${htmlEscape(facility)}</td><td>${htmlEscape(inpatientDate(item.admissionDate, item.admissionTime))}</td><td>${htmlEscape(inpatientDate(item.dischargeDate, item.dischargeTime))}</td><td>${htmlEscape(item.status)}</td><td><div class="table-actions"><button type="button" class="table-action" data-ipd-view="${htmlEscape(item.id)}">View</button>${editable ? `<button type="button" class="table-action" data-ipd-edit="${htmlEscape(item.id)}">Edit</button><button type="button" class="table-action delete" data-ipd-delete="${htmlEscape(item.id)}">Delete</button>` : ""}</div></td></tr>`;
+    }).join("");
+    document.querySelector("[data-ipd-count]").textContent = `${entries.length} ${entries.length === 1 ? "admission" : "admissions"}`;
+    document.querySelector("[data-ipd-empty]").hidden = entries.length > 0;
+  }
+
+  function saveInpatient(event) {
+    event.preventDefault();
+    if (!requirePatientProfile()) return;
+    const form = event.currentTarget;
+    const fail = text => { const error = document.querySelector("[data-ipd-error]"); error.textContent = text; error.hidden = false; error.focus(); };
+    const data = Object.fromEntries(IPD_FIELDS.map(key => [key, form.elements[key].value.trim()]));
+    const old = editingEncounterId ? state.ipdEncounters.find(item => item.id === editingEncounterId && item.patientId === patientKey()) : null;
+    if (editingEncounterId && !old) return fail("This admission is no longer available. Reload the page.");
+    if (!state.facilities.some(item => item.id === data.facilityId && item.status !== "Deleted")) return fail("Select an available facility.");
+    if (data.practitionerId && !state.practitioners.some(item => item.id === data.practitionerId && item.status !== "Deleted")) return fail("Select an available practitioner.");
+    for (const key of ["admissionType", "admissionSource", "status", "disposition"]) {
+      if (!Array.from(form.elements[key].options).some(option => option.value === data[key])) return fail("Select a valid admission or discharge option.");
+    }
+    if (["admissionDate", "admissionTime", "dischargeDate", "dischargeTime"].some(key => !form.elements[key].validity.valid)) return fail("Enter valid dates and times, or leave optional fields blank.");
+    if (!data.admissionDate) return fail("Enter the admission date.");
+    if (data.dischargeTime && !data.dischargeDate) return fail("Enter a discharge date when a discharge time is provided.");
+    if (data.status === "Discharged" && (!data.dischargeDate || !data.disposition)) return fail("Enter the discharge date and disposition for a discharged admission.");
+    const nowDate = new Date();
+    nowDate.setMinutes(nowDate.getMinutes() - nowDate.getTimezoneOffset());
+    const now = nowDate.toISOString().slice(0, -1);
+    const stamp = (date, time) => date + (time ? `T${time}` : "");
+    if ([[data.admissionDate, data.admissionTime], [data.dischargeDate, data.dischargeTime]].some(([date, time]) => date && stamp(date, time) > (time ? now : now.slice(0, 10)))) return fail("Admission and discharge dates cannot be in the future.");
+    const seconds = value => { const [hours, minutes, seconds = 0] = value.split(":").map(Number); return hours * 3600 + minutes * 60 + seconds; };
+    if (data.dischargeDate && (data.dischargeDate < data.admissionDate || (data.dischargeDate === data.admissionDate && data.admissionTime && data.dischargeTime && seconds(data.dischargeTime) < seconds(data.admissionTime)))) return fail("Discharge cannot be before admission.");
+    const record = { id: old?.id || createId("IPD"), patientId: patientKey(), ...data, createdAt: old?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
+    const previous = state.ipdEncounters;
+    state.ipdEncounters = [...previous.filter(item => item.id !== record.id), record];
+    if (!saveState()) { state.ipdEncounters = previous; return; }
+    resetInpatientForm();
+    renderInpatient();
+    showToast(old ? "Admission updated." : "Admission saved.");
+  }
+
+  function editInpatient(id) {
+    if (!requirePatientProfile()) return;
+    const item = state.ipdEncounters.find(entry => entry.id === id && entry.patientId === patientKey());
+    if (!item) return showToast("This admission is no longer available.", true);
+    resetInpatientForm();
+    editingEncounterId = id;
+    const form = document.querySelector("[data-ipd-form]");
+    IPD_FIELDS.forEach(key => { form.elements[key].value = item[key] || ""; });
+    document.querySelector("[data-ipd-heading]").textContent = "Edit admission";
+    document.querySelector("[data-ipd-submit]").textContent = "Update admission";
+    document.querySelector("[data-ipd-cancel]").hidden = false;
+    form.scrollIntoView({ block: "start" });
+  }
+
+  function viewInpatient(id) {
+    const item = state.ipdEncounters.find(entry => entry.id === id && entry.patientId === patientKey());
+    if (!item) return showToast("This admission is no longer available.", true);
+    showDetails("Admission and discharge", [
+      ["Encounter ID", item.id], ["Facility", state.facilities.find(entry => entry.id === item.facilityId)?.name || "Unknown facility"],
+      ["Primary practitioner", item.practitionerId ? rxPractitionerName(item.practitionerId) : "—"],
+      ["Status", item.status], ["Admission", inpatientDate(item.admissionDate, item.admissionTime)],
+      ["Admission type", item.admissionType], ["Admission source", item.admissionSource],
+      ["Admitting diagnosis", item.admittingDiagnosis], ["Admitting diagnosis ICD-10 code", item.admittingCode], ["Chief complaint", item.chiefComplaint],
+      ["Ward", item.ward], ["Room", item.room], ["Bed", item.bed],
+      ["Discharge", inpatientDate(item.dischargeDate, item.dischargeTime)], ["Disposition", item.disposition],
+      ["Final diagnosis", item.finalDiagnosis], ["Final diagnosis ICD-10 code", item.finalCode],
+      ["Discharge summary", item.dischargeSummary], ["Follow-up instructions", item.followUp]
+    ]);
+  }
+
+  function initInpatient() {
+    renderAppHeader("inpatient");
+    const form = document.querySelector("[data-ipd-form]");
+    document.querySelector("[data-ipd-form-card]").hidden = !canManageRecords();
+    document.querySelector("[data-ipd-access]").hidden = canManageRecords();
+    resetInpatientForm();
+    renderInpatient();
+    form.addEventListener("submit", saveInpatient);
+    form.querySelector("[data-ipd-cancel]").addEventListener("click", resetInpatientForm);
+    document.querySelector("[data-ipd-body]").addEventListener("click", event => {
+      const view = event.target.closest("[data-ipd-view]"), edit = event.target.closest("[data-ipd-edit]"), del = event.target.closest("[data-ipd-delete]");
+      if (view) viewInpatient(view.dataset.ipdView);
+      if (edit) editInpatient(edit.dataset.ipdEdit);
+      if (del && requirePatientProfile()) {
+        const id = del.dataset.ipdDelete;
+        if (!state.ipdEncounters.some(item => item.id === id && item.patientId === patientKey())) return showToast("This admission is no longer available.", true);
+        if (!window.confirm("Delete this admission and its discharge details?")) return;
+        const previous = state.ipdEncounters;
+        state.ipdEncounters = previous.filter(item => item.id !== id || item.patientId !== patientKey());
+        if (!saveState()) { state.ipdEncounters = previous; return; }
+        if (editingEncounterId === id) resetInpatientForm();
+        renderInpatient();
+        showToast("Admission deleted.");
+      }
+    });
+  }
+
+  function reportPrescriptionItems() {
+    return state.interventionItems.filter(item => {
+      const rx = state.prescriptions.find(record => record.id === item.prescriptionId && record.patientId === patientKey());
+      return rx && !isClinicalRx(rx);
+    }).map(item => {
+      const rx = state.prescriptions.find(record => record.id === item.prescriptionId);
+      return { id: item.id, name: item.name || ivMethodName(item.methodId), method: ivMethodName(item.methodId), practitioner: rxPractitionerName(rx.practitionerId), prescriptionId: rx.id, label: `${item.name || ivMethodName(item.methodId)} · ${ivMethodName(item.methodId)} · ${rxPractitionerName(rx.practitionerId)} · ${formatDateTime(rx.issuedAt)} · ${rx.id}` };
+    }).sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  function updateReportPrescription() {
+    const form = document.querySelector("[data-report-form]");
+    const item = reportPrescriptionItems().find(entry => entry.id === form.elements.interventionItemId.value);
+    form.querySelector("[data-report-method]").value = item ? item.method : "Select a prescribed intervention";
+    form.querySelector("[data-report-prescriber]").value = item ? item.practitioner : "Select a prescribed intervention";
+  }
+
+  function reportLegacyTest(item) {
+    if (!item.testId) return "";
+    return state.tests.find(test => test.id === item.testId)?.name || `Unavailable test (${item.testId})`;
+  }
+
+  function addReportObservation(item = {}) {
+    const row = document.createElement("div");
+    row.className = "report-observation";
+    row.dataset.reportObservation = "";
+    row.dataset.id = item.id || "";
+    row.dataset.template = item.template ? "true" : "false";
+    const types = REPORT_TYPES.map(([value, label]) => `<option value="${value}"${(item.type || "text") === value ? " selected" : ""}>${label}</option>`).join("");
+    const qualifiers = ["", "<", "≤", ">", "≥", "="].map(value => `<option value="${value}"${(item.qualifier || "") === value ? " selected" : ""}>${value || "None"}</option>`).join("");
+    const flags = ["", "Normal", "Low", "High", "Positive/Abnormal", "Critical", "Not applicable"].map(value => `<option value="${value}"${(item.flag || "") === value ? " selected" : ""}>${value || "Not recorded"}</option>`).join("");
+    row.innerHTML = `<div class="report-grid">
+      <label class="form-field">Section / group<input name="section" value="${htmlEscape(item.section || "")}" maxlength="160"></label>
+      <label class="form-field">Parameter name<input name="parameter" value="${htmlEscape(item.parameter || "")}" maxlength="200"></label>
+      <label class="form-field">Parameter code (optional)<input name="code" value="${htmlEscape(item.code || "")}" maxlength="80"></label>
+      <label class="form-field">Code system (optional)<input name="codeSystem" value="${htmlEscape(item.codeSystem || "")}" maxlength="80"></label>
+      <label class="form-field">Result type<select name="type">${types}</select></label>
+      <label class="form-field">Result value<textarea name="value" rows="2" placeholder="Enter the reported value">${htmlEscape(item.value || "")}</textarea></label>
+      <label class="form-field">Numeric qualifier<select name="qualifier">${qualifiers}</select></label>
+      <label class="form-field">Unit<input name="unit" value="${htmlEscape(item.unit || "")}" maxlength="80"></label>
+      <label class="form-field">Reference low<input name="referenceLow" value="${htmlEscape(item.referenceLow || "")}" inputmode="decimal"></label>
+      <label class="form-field">Reference high<input name="referenceHigh" value="${htmlEscape(item.referenceHigh || "")}" inputmode="decimal"></label>
+      <label class="form-field">Reference text<input name="referenceText" value="${htmlEscape(item.referenceText || "")}"></label>
+      <label class="form-field">Reported flag<select name="flag">${flags}</select></label>
+    </div><label class="form-field">Observation note<textarea name="note" rows="2">${htmlEscape(item.note || "")}</textarea></label><button type="button" class="button button-secondary button-compact" data-report-remove>Remove observation</button>`;
+    document.querySelector("[data-report-observations]").append(row);
+  }
+
+  function addReportNarrative(item = {}) {
+    const row = document.createElement("div");
+    row.className = "report-narrative";
+    row.dataset.reportNarrative = "";
+    row.dataset.id = item.id || "";
+    row.innerHTML = `<label class="form-field">Section name<input name="title" value="${htmlEscape(item.title || "")}" maxlength="160" placeholder="e.g. Light Microscopy"></label><label class="form-field">Narrative<textarea name="text" rows="4">${htmlEscape(item.text || "")}</textarea></label><button type="button" class="button button-secondary button-compact" data-report-remove>Remove section</button>`;
+    document.querySelector("[data-report-narratives]").append(row);
+  }
+
+  function resetReportForm() {
+    const form = document.querySelector("[data-report-form]");
+    editingReportId = null;
+    form.reset();
+    form.elements.facilityId.innerHTML = reportOptionList(state.facilities.filter(item => item.status !== "Deleted"), "", "Select facility...", item => item.name);
+    const people = state.practitioners.filter(item => item.status !== "Deleted");
+    form.elements.interventionistId.innerHTML = reportOptionList(people, "", "Not recorded", item => item.name);
+    form.elements.specialistId.innerHTML = reportOptionList(people, "", "Not recorded", item => item.name);
+    form.elements.interventionItemId.innerHTML = reportOptionList(reportPrescriptionItems(), "", "Select prescribed intervention...", item => item.label);
+    updateReportPrescription();
+    document.querySelector("[data-report-legacy-test]").hidden = true;
+    document.querySelector("[data-report-observations]").innerHTML = "";
+    document.querySelector("[data-report-narratives]").innerHTML = "";
+    document.querySelector("[data-report-heading]").textContent = "Add intervention report";
+    document.querySelector("[data-report-submit]").textContent = "Save report";
+    document.querySelector("[data-report-cancel]").hidden = true;
+    document.querySelector("[data-report-error]").hidden = true;
+  }
+
+  function renderReports() {
+    const list = state.interventionReports.filter(item => item.patientId === patientKey()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const editable = canManageRecords();
+    const facilityName = id => state.facilities.find(item => item.id === id)?.name || "Unknown facility";
+    const prescribed = new Map(reportPrescriptionItems().map(item => [item.id, item]));
+    document.querySelector("[data-report-body]").innerHTML = list.map(item => `<tr><td>${htmlEscape(prescribed.get(item.interventionItemId)?.name || (reportLegacyTest(item) ? `${reportLegacyTest(item)} (legacy; link required)` : "Prescription unavailable"))}</td><td>${htmlEscape(facilityName(item.facilityId))}</td><td>${htmlEscape(formatReportDate(item.collectedAt))}</td><td>${htmlEscape(formatReportDate(item.reportedAt))}</td><td>${htmlEscape(item.status)}</td><td><div class="table-actions"><button type="button" class="table-action" data-report-view="${htmlEscape(item.id)}">View</button>${editable ? `<button type="button" class="table-action" data-report-edit="${htmlEscape(item.id)}">Edit</button><button type="button" class="table-action delete" data-report-delete="${htmlEscape(item.id)}">Delete</button>` : ""}</div></td></tr>`).join("");
+    document.querySelector("[data-report-empty]").hidden = list.length > 0;
+    document.querySelector("[data-report-count]").textContent = `${list.length} ${list.length === 1 ? "report" : "reports"}`;
+  }
+
+  function saveReport(event) {
+    event.preventDefault();
+    if (!requirePatientProfile()) return;
+    const form = event.currentTarget;
+    const fail = text => { const error = document.querySelector("[data-report-error]"); error.textContent = text; error.hidden = false; error.focus(); };
+    const header = ["facilityId", "interventionistId", "specialistId", "workflow", "domain", "interventionItemId", "status", "specimen", "site", "standardCode", "codeSystem", "indication", "impression"];
+    const data = Object.fromEntries(header.map(key => [key, form.querySelector(`[name="${key}"]`).value.trim()]));
+    const old = editingReportId ? state.interventionReports.find(item => item.id === editingReportId && item.patientId === patientKey()) : null;
+    if (editingReportId && !old) return fail("This report is no longer available. Reload the page.");
+    if (!data.interventionItemId || !reportPrescriptionItems().some(item => item.id === data.interventionItemId)) return fail("Select an available prescribed intervention for this patient.");
+    if (!state.facilities.some(item => item.id === data.facilityId && item.status !== "Deleted")) return fail("Select an available facility.");
+    if (!["Pathology", "Histopathology"].includes(data.workflow)) return fail("Select a workflow type.");
+    if (!["Ordered", "In Progress", "Preliminary", "Final", "Amended", "Cancelled"].includes(data.status)) return fail("Select a report status.");
+    if (["collectedDate", "collectedTime", "reportedDate", "reportedTime"].some(key => !form.elements[key].validity.valid)) return fail("Enter valid collection and reported dates and times, or leave them blank.");
+    const collectedDate = form.elements.collectedDate.value, collectedTime = form.elements.collectedTime.value;
+    const reportedDate = form.elements.reportedDate.value, reportedTime = form.elements.reportedTime.value;
+    if ((!collectedDate && collectedTime) || (!reportedDate && reportedTime)) return fail("Enter a date for each time, or leave the time blank.");
+    data.collectedAt = collectedDate + (collectedTime ? `T${collectedTime}` : "");
+    data.reportedAt = reportedDate + (reportedTime ? `T${reportedTime}` : "");
+    const nowDate = new Date();
+    nowDate.setMinutes(nowDate.getMinutes() - nowDate.getTimezoneOffset());
+    const now = nowDate.toISOString().slice(0, -1);
+    if ([data.collectedAt, data.reportedAt].some(value => value && value > (value.length > 10 ? now : now.slice(0, 10)))) return fail("Collection and reported dates cannot be in the future.");
+    const timeSeconds = value => { const [hours, minutes, seconds = 0] = value.split(":").map(Number); return hours * 3600 + minutes * 60 + seconds; };
+    if (collectedDate && reportedDate && (reportedDate < collectedDate || (reportedDate === collectedDate && collectedTime && reportedTime && timeSeconds(reportedTime) < timeSeconds(collectedTime)))) return fail("Reported date and time cannot be before collection.");
+    if ([data.interventionistId, data.specialistId].some(id => id && !state.practitioners.some(item => item.id === id && item.status !== "Deleted"))) return fail("Select an available practitioner.");
+    if (Boolean(data.standardCode.trim()) !== Boolean(data.codeSystem.trim())) return fail("Enter both the test code and its code system, or leave both blank.");
+    const observations = [];
+    for (const row of form.querySelectorAll("[data-report-observation]")) {
+      const get = name => row.querySelector(`[name="${name}"]`).value.trim();
+      const item = Object.fromEntries(["section", "parameter", "code", "codeSystem", "type", "value", "qualifier", "unit", "referenceLow", "referenceHigh", "referenceText", "flag", "note"].map(name => [name, get(name)]));
+      if (!item.value && !item.code && !item.codeSystem && !item.qualifier && !item.unit && !item.referenceLow && !item.referenceHigh && !item.referenceText && !item.flag && !item.note) {
+        if (row.dataset.template === "true" || (!item.section && !item.parameter)) continue;
+        return fail("Enter a result value or remove the empty observation.");
+      }
+      if (!item.parameter || !item.value) return fail("Each observation with details needs a parameter name and result value.");
+      if (!REPORT_TYPES.some(([type]) => type === item.type)) return fail("Select a valid observation type.");
+      if (item.type === "numeric" && !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(item.value)) return fail(`Enter a numeric value for ${item.parameter}; use the qualifier field for < or >.`);
+      if (item.type !== "numeric" && item.qualifier) return fail(`Numeric qualifiers apply only to numeric values: ${item.parameter}.`);
+      if ([item.referenceLow, item.referenceHigh].some(value => value && !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value))) return fail(`Reference bounds for ${item.parameter} must be numbers.`);
+      if (item.referenceLow && item.referenceHigh && Number(item.referenceLow) > Number(item.referenceHigh)) return fail(`Reference low exceeds reference high for ${item.parameter}.`);
+      if (Boolean(item.code) !== Boolean(item.codeSystem)) return fail(`Enter both the parameter code and code system for ${item.parameter}, or leave both blank.`);
+      observations.push({ id: row.dataset.id || createId("IOBS"), ...item });
+    }
+    const narratives = [];
+    for (const row of form.querySelectorAll("[data-report-narrative]")) {
+      const title = row.querySelector('[name="title"]').value.trim(), text = row.querySelector('[name="text"]').value.trim();
+      if (!title && !text) continue;
+      if (!title || !text) return fail("Each narrative section needs a name and text.");
+      narratives.push({ id: row.dataset.id || createId("INAR"), title, text });
+    }
+    const starterTemplate = form.querySelector("[data-report-template]").value;
+    if (starterTemplate && !Object.keys(REPORT_TEMPLATES).includes(starterTemplate)) return fail("Select a valid starter template.");
+    const record = { ...(old || {}), id: old?.id || createId("IREP"), patientId: patientKey(), ...data, starterTemplate, observations, narratives, createdAt: old?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
+    const previous = state.interventionReports;
+    state.interventionReports = [...previous.filter(item => item.id !== record.id), record];
+    if (!saveState()) { state.interventionReports = previous; return; }
+    resetReportForm();
+    renderReports();
+    showToast(old ? "Intervention report updated." : "Intervention report saved.");
+  }
+
+  function editReport(id) {
+    if (!requirePatientProfile()) return;
+    const item = state.interventionReports.find(entry => entry.id === id && entry.patientId === patientKey());
+    if (!item) return showToast("This report is no longer available.", true);
+    resetReportForm();
+    editingReportId = id;
+    const form = document.querySelector("[data-report-form]");
+    ["facilityId", "interventionistId", "specialistId", "workflow", "domain", "interventionItemId", "status", "specimen", "site", "standardCode", "codeSystem", "indication", "impression"].forEach(key => { form.elements[key].value = item[key] || ""; });
+    updateReportPrescription();
+    const legacy = reportLegacyTest(item);
+    const legacyNote = document.querySelector("[data-report-legacy-test]");
+    legacyNote.hidden = !legacy;
+    legacyNote.textContent = `Previously recorded test: ${legacy}. Select the correct prescribed intervention; no automatic match has been made.`;
+    [["collectedAt", "collectedDate", "collectedTime"], ["reportedAt", "reportedDate", "reportedTime"]].forEach(([key, date, time]) => {
+      const [dateValue, timeValue = ""] = (item[key] || "").split("T");
+      form.elements[date].value = dateValue;
+      form.elements[time].value = timeValue;
+    });
+    form.querySelector("[data-report-template]").value = item.starterTemplate || "";
+    item.observations.forEach(addReportObservation);
+    item.narratives.forEach(addReportNarrative);
+    document.querySelector("[data-report-heading]").textContent = "Edit intervention report";
+    document.querySelector("[data-report-submit]").textContent = "Update report";
+    document.querySelector("[data-report-cancel]").hidden = false;
+    form.scrollIntoView({ block: "start" });
+  }
+
+  function viewReport(id) {
+    const item = state.interventionReports.find(entry => entry.id === id && entry.patientId === patientKey());
+    if (!item) return showToast("This report is no longer available.", true);
+    const practitioner = id => id ? rxPractitionerName(id) : "—";
+    const linked = reportPrescriptionItems().find(entry => entry.id === item.interventionItemId);
+    const rows = [
+      ["Prescribed intervention", linked?.name || (item.interventionItemId ? "Prescription unavailable" : "Not linked")],
+      ["Intervention method", linked?.method], ["Prescribing practitioner", linked?.practitioner], ["Prescription ID", linked?.prescriptionId],
+      ...(item.testId ? [["Previously recorded test", reportLegacyTest(item)]] : []), ["Facility", state.facilities.find(facility => facility.id === item.facilityId)?.name || "Unknown facility"],
+      ["Interventionist", practitioner(item.interventionistId)], ["Interpreting specialist", practitioner(item.specialistId)],
+      ["Workflow / domain", [item.workflow, item.domain].filter(Boolean).join(" — ")],
+      ["Status", item.status], ["Collected", formatReportDate(item.collectedAt)], ["Reported", formatReportDate(item.reportedAt)],
+      ["Selected starter template", Array.from(document.querySelector("[data-report-template]").options).find(option => option.value && option.value === item.starterTemplate)?.textContent || "—"],
+      ["Specimen / site", [item.specimen, item.site].filter(Boolean).join(" — ")], ["Code", [item.codeSystem, item.standardCode].filter(Boolean).join(": ")],
+      ["Clinical indication", item.indication], ["Overall impression", item.impression],
+      ...item.observations.map(obs => [`${obs.section ? `${obs.section} — ` : ""}${obs.parameter}`, `${REPORT_TYPES.find(([type]) => type === obs.type)?.[1] || obs.type}: ${obs.qualifier || ""}${obs.value}${obs.unit ? ` ${obs.unit}` : ""}${obs.flag ? ` · ${obs.flag}` : ""}${obs.referenceLow || obs.referenceHigh ? ` · Range: ${obs.referenceLow || "—"} to ${obs.referenceHigh || "—"}` : ""}${obs.referenceText ? ` · ${obs.referenceText}` : ""}${obs.code ? ` · ${obs.codeSystem}: ${obs.code}` : ""}${obs.note ? ` · ${obs.note}` : ""}`]),
+      ...item.narratives.map(section => [section.title, section.text]), ["Report ID", item.id]
+    ];
+    showDetails("Intervention report", rows);
+  }
+
+  function initInterventionReports() {
+    renderAppHeader("interventions");
+    const form = document.querySelector("[data-report-form]");
+    document.querySelector("[data-report-form-card]").hidden = !canManageRecords();
+    document.querySelector("[data-report-access]").hidden = canManageRecords();
+    resetReportForm();
+    renderReports();
+    form.addEventListener("submit", saveReport);
+    form.elements.interventionItemId.addEventListener("change", updateReportPrescription);
+    form.addEventListener("click", event => {
+      if (event.target.closest("[data-report-add-observation]")) addReportObservation();
+      else if (event.target.closest("[data-report-add-narrative]")) addReportNarrative();
+      else if (event.target.closest("[data-report-remove]")) event.target.closest("[data-report-observation], [data-report-narrative]").remove();
+      else if (event.target.closest("[data-report-cancel]")) resetReportForm();
+      else if (event.target.closest("[data-report-apply]")) {
+        const key = form.querySelector("[data-report-template]").value;
+        if (!REPORT_TEMPLATES[key]) return showToast("Select a starter template first.", true);
+        REPORT_TEMPLATES[key].forEach(([section, parameter, type]) => addReportObservation({ section, parameter, type, template: true }));
+      }
+    });
+    document.querySelector("[data-report-body]").addEventListener("click", event => {
+      const view = event.target.closest("[data-report-view]"), edit = event.target.closest("[data-report-edit]"), del = event.target.closest("[data-report-delete]");
+      if (view) viewReport(view.dataset.reportView);
+      if (edit) editReport(edit.dataset.reportEdit);
+      if (del && requirePatientProfile()) {
+        const id = del.dataset.reportDelete;
+        if (!state.interventionReports.some(item => item.id === id && item.patientId === patientKey())) return showToast("This report is no longer available.", true);
+        if (!window.confirm("Delete this intervention report and its observations?")) return;
+        const previous = state.interventionReports;
+        state.interventionReports = previous.filter(item => item.id !== id || item.patientId !== patientKey());
+        if (!saveState()) { state.interventionReports = previous; return; }
+        if (editingReportId === id) resetReportForm();
+        renderReports();
+        showToast("Intervention report deleted.");
+      }
+    });
+  }
+
+  function latestOpenPrescriptions() {
     const latest = new Map();
-    state.prescriptions.filter(item => item.patientId === patientKey()).forEach(item => {
+    state.prescriptions.filter(item => item.patientId === patientKey() && isClinicalRx(item)).forEach(item => {
       const current = latest.get(item.practitionerId);
       if (!current || item.issuedAt > current.issuedAt) latest.set(item.practitionerId, item);
     });
+    return [...latest.values()].filter(rx => !rx.closed);
+  }
+
+  // Latest prescription of each practitioner for this patient drives the daily schedule.
+  function medicationSchedule(day) {
     const entries = [];
-    latest.forEach(rx => {
-      if (rx.closed) return;
+    latestOpenPrescriptions().forEach(rx => {
       state.prescriptionMedications.filter(med => med.prescriptionId === rx.id).forEach(med => {
         med.timings.forEach(timing => {
           const taken = state.medicationLogs.some(log => log.medicationId === med.id && log.timing === timing && log.scheduledDate === day);
@@ -1995,37 +2454,540 @@
     return entries.sort((a, b) => RX_TIMINGS.indexOf(a.timing) - RX_TIMINGS.indexOf(b.timing) || a.med.drugName.localeCompare(b.med.drugName));
   }
 
+  let editingOpeningStockId = null;
+
+  function availableStockMedications() {
+    const prescriptions = new Map(latestOpenPrescriptions().map(rx => [rx.id, rx]));
+    const groups = new Map();
+    state.prescriptionMedications
+      .filter(med => med.patientId === patientKey() && prescriptions.has(med.prescriptionId))
+      .forEach(med => {
+        const key = med.drugName.trim().toLowerCase();
+        if (!groups.has(key)) groups.set(key, { name: med.drugName.trim(), rows: [] });
+        groups.get(key).rows.push({ med, rx: prescriptions.get(med.prescriptionId) });
+      });
+    return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  function stockPracticeFilter() {
+    return document.querySelector("[data-stock-practice-filter]").value;
+  }
+
+  function fillStockPracticeFilter() {
+    const select = document.querySelector("[data-stock-practice-filter]");
+    const selected = select.value;
+    const practices = new Map();
+    availableStockMedications().forEach(group => group.rows.forEach(({ rx }) => {
+      const practice = medicationPractice(rx.practitionerId);
+      if (practice.key !== null) practices.set(practice.key, practice.name);
+    }));
+    select.innerHTML = '<option value="">All practice types</option>' +
+      [...practices].sort((a, b) => a[1].localeCompare(b[1]) || a[0].localeCompare(b[0]))
+        .map(([id, name]) => `<option value="${htmlEscape(id)}">${htmlEscape(name)}</option>`).join("");
+    if (practices.has(selected)) select.value = selected;
+  }
+
+  function matchesStockPractice(group, practiceId, unit) {
+    if (!practiceId) return true;
+    return Boolean(group && group.rows.some(({ med, rx }) =>
+      medicationPractice(rx.practitionerId).key === practiceId &&
+      (!unit || (typeof med.unit === "string" && med.unit.trim().toLowerCase() === unit.trim().toLowerCase()))));
+  }
+
+  function matchingStockEntries(practiceId) {
+    const medicines = new Map(availableStockMedications().map(group => [group.name.toLowerCase(), group]));
+    return state.openingStocks.filter(item => item.patientId === patientKey() &&
+      matchesStockPractice(medicines.get(item.drugName.trim().toLowerCase()), practiceId, item.consumptionUnit))
+      .sort((a, b) => a.drugName.localeCompare(b.drugName));
+  }
+
+  function fillOpeningStockMedicines() {
+    const form = document.querySelector("[data-stock-form]");
+    const selected = form.elements.medicationId.value;
+    const medicines = availableStockMedications().filter(group => matchesStockPractice(group, stockPracticeFilter()));
+    form.elements.medicationId.innerHTML = '<option value="">Select a prescribed medicine...</option>' + medicines.map(group =>
+      `<option value="${htmlEscape(group.name.toLowerCase())}">${htmlEscape(group.name)}</option>`
+    ).join("");
+    form.elements.medicationId.value = medicines.some(group => group.name.toLowerCase() === selected) ? selected : "";
+    form.elements.medicationId.dispatchEvent(new Event("change"));
+  }
+
+  function resetOpeningStock() {
+    editingOpeningStockId = null;
+    document.querySelector("[data-stock-practice-filter]").disabled = false;
+    const form = document.querySelector("[data-stock-form]");
+    form.reset();
+    form.elements.openingDate.value = todayInput();
+    form.elements.openingDate.max = todayInput();
+    form.elements.medicationId.disabled = false;
+    fillOpeningStockMedicines();
+    document.querySelector("[data-stock-heading]").textContent = "Add opening stock";
+    document.querySelector("[data-stock-submit]").textContent = "Save opening stock";
+    document.querySelector("[data-stock-cancel]").hidden = true;
+    document.querySelector("[data-stock-error]").hidden = true;
+  }
+
+  function renderOpeningStocks() {
+    const list = matchingStockEntries(stockPracticeFilter()).sort((a, b) => b.openingDate.localeCompare(a.openingDate));
+    const body = document.querySelector("[data-stock-body]");
+    body.innerHTML = list.map(item => `<tr><td>${htmlEscape(item.openingDate)}</td><td>${htmlEscape(item.drugName)}</td><td>${htmlEscape(item.practitionerName)}</td><td>${htmlEscape(item.quantity)} ${htmlEscape(item.consumptionUnit)}</td><td>${htmlEscape(item.orderUnit)}</td><td>1 ${htmlEscape(item.orderUnit)} = ${htmlEscape(item.conversion)} ${htmlEscape(item.consumptionUnit)}</td><td>${htmlEscape(item.reorderLevel)} ${htmlEscape(item.consumptionUnit)}</td><td>${item.leadTimeDays == null ? "Not set" : `${htmlEscape(item.leadTimeDays)} days`}</td><td><div class="table-actions"><button type="button" class="table-action" data-stock-view="${htmlEscape(item.id)}">View</button>${canManageRecords() ? `<button type="button" class="table-action" data-stock-edit="${htmlEscape(item.id)}">Edit</button><button type="button" class="table-action delete" data-stock-delete="${htmlEscape(item.id)}">Delete</button>` : ""}</div></td></tr>`).join("");
+    document.querySelector("[data-stock-count]").textContent = `${list.length} ${list.length === 1 ? "entry" : "entries"}`;
+    document.querySelector("[data-stock-empty]").hidden = list.length > 0;
+  }
+
+  function saveOpeningStock(event) {
+    event.preventDefault();
+    if (!requirePatientProfile()) return;
+    const form = event.currentTarget;
+    const error = document.querySelector("[data-stock-error]");
+    const fail = message => { error.textContent = message; error.hidden = false; };
+    const values = form.elements;
+    const openingDate = values.openingDate.value;
+    const quantity = Number(values.quantity.value);
+    const conversion = Number(values.conversion.value);
+    const reorderLevel = Number(values.reorderLevel.value);
+    const leadTimeDays = Number(values.leadTimeDays.value);
+    const orderUnit = values.orderUnit.value.trim();
+    if (!openingDate || openingDate > todayInput()) return fail("Enter an opening date that is not in the future.");
+    if (values.quantity.value === "" || !Number.isFinite(quantity) || quantity < 0) return fail("Enter an opening quantity of zero or more.");
+    if (!orderUnit || values.conversion.value === "" || !Number.isFinite(conversion) || conversion <= 0) return fail("Enter an order unit and a conversion greater than zero.");
+    if (values.reorderLevel.value === "" || !Number.isFinite(reorderLevel) || reorderLevel < 0) return fail("Enter a reorder level of zero or more.");
+    if (values.leadTimeDays.value === "" || !Number.isSafeInteger(leadTimeDays) || leadTimeDays < 0) return fail("Enter lead time as a whole number of days, zero or more.");
+    state = loadState();
+    const previous = editingOpeningStockId && state.openingStocks.find(item => item.id === editingOpeningStockId && item.patientId === patientKey());
+    if (editingOpeningStockId && !previous) return fail("This entry is no longer available. Reload the page and try again.");
+    if (previous && state.stockReceipts.some(receipt => receipt.patientId === patientKey() && receipt.openingStockId === previous.id && receipt.receivedAt.slice(0, 10) < openingDate)) {
+      return fail("The opening date cannot be after an existing receipt. Edit the receipt first.");
+    }
+    const selected = !previous && availableStockMedications().find(item => item.name.toLowerCase() === values.medicationId.value && matchesStockPractice(item, stockPracticeFilter()));
+    if (!previous && !selected) return fail("Select a medicine from a current open prescription.");
+    if (selected && new Set(selected.rows.map(({ med }) => med.unit.trim().toLowerCase())).size !== 1) {
+      return fail("This medicine has different consumption units across its prescriptions. Correct the prescription units before recording opening stock.");
+    }
+    const source = previous || {
+      medicationId: selected.rows[0].med.id,
+      prescriptionId: selected.rows[0].rx.id,
+      medicationIds: selected.rows.map(({ med }) => med.id),
+      prescriptionIds: [...new Set(selected.rows.map(({ rx }) => rx.id))],
+      drugName: selected.name,
+      consumptionUnit: selected.rows[0].med.unit,
+      practitionerName: [...new Set(selected.rows.map(({ rx }) => rxPractitionerName(rx.practitionerId)))].join(", ")
+    };
+    const duplicate = state.openingStocks.find(item => item.patientId === patientKey() && item.id !== editingOpeningStockId &&
+      item.drugName.trim().toLowerCase() === source.drugName.trim().toLowerCase() &&
+      item.consumptionUnit.trim().toLowerCase() === source.consumptionUnit.trim().toLowerCase());
+    if (duplicate) return fail("An opening balance already exists for this medicine and unit. Edit the existing entry instead of counting the same stock twice.");
+    const entry = { ...source, id: editingOpeningStockId || createId("OPEN"), patientId: patientKey(), openingDate, quantity, orderUnit, conversion, reorderLevel, leadTimeDays };
+    const before = state.openingStocks.slice();
+    if (previous) state.openingStocks = state.openingStocks.map(item => item.id === previous.id && item.patientId === patientKey() ? entry : item);
+    else state.openingStocks.push(entry);
+    if (!saveState()) { state.openingStocks = before; return; }
+    resetOpeningStock();
+    renderOpeningStocks();
+    showToast(previous ? "Opening stock updated." : "Opening stock saved.");
+  }
+
+  function initOpeningStock() {
+    renderAppHeader("dashboard");
+    const canEdit = canManageRecords();
+    document.querySelector("[data-stock-form-card]").hidden = !canEdit;
+    document.querySelector("[data-stock-access]").hidden = canEdit;
+    const form = document.querySelector("[data-stock-form]");
+    form.elements.medicationId.addEventListener("change", () => {
+      const selected = availableStockMedications().find(item => item.name.toLowerCase() === form.elements.medicationId.value);
+      document.querySelector("[data-stock-prescription]").textContent = selected
+        ? `Prescribed: ${selected.rows.map(({ med, rx }) => `${rxPractitionerName(rx.practitionerId)} — ${rxDescribeMed(med)}`).join("; ")}`
+        : form.elements.medicationId.options.length > 1 ? "Select a medicine to see its prescribed doses." : "No current prescribed medicines match this filter.";
+    });
+    fillStockPracticeFilter();
+    resetOpeningStock();
+    document.querySelector("[data-stock-practice-filter]").addEventListener("change", () => {
+      state = loadState();
+      fillStockPracticeFilter();
+      fillOpeningStockMedicines();
+      renderOpeningStocks();
+    });
+    form.addEventListener("submit", saveOpeningStock);
+    document.addEventListener("click", event => {
+      if (event.target.closest("[data-stock-cancel]")) { resetOpeningStock(); return; }
+      const button = event.target.closest("[data-stock-view], [data-stock-edit], [data-stock-delete]");
+      if (!button) return;
+      const id = button.dataset.stockView || button.dataset.stockEdit || button.dataset.stockDelete;
+      const item = state.openingStocks.find(entry => entry.id === id && entry.patientId === patientKey());
+      if (!item) return showToast("This opening stock entry is no longer available.", true);
+      if (button.dataset.stockView) {
+        showDetails("Opening stock", [["Medicine", item.drugName], ["Practitioner", item.practitionerName], ["Opening date", item.openingDate], ["Opening quantity", `${item.quantity} ${item.consumptionUnit}`], ["Order unit", item.orderUnit], ["Conversion", `1 ${item.orderUnit} = ${item.conversion} ${item.consumptionUnit}`], ["Reorder level", `${item.reorderLevel} ${item.consumptionUnit}`], ["Lead time", item.leadTimeDays == null ? "Not set" : `${item.leadTimeDays} days`]]);
+      } else if (button.dataset.stockEdit) {
+        if (!requirePatientProfile()) return;
+        resetOpeningStock();
+        editingOpeningStockId = item.id;
+        document.querySelector("[data-stock-practice-filter]").disabled = true;
+        form.elements.medicationId.innerHTML = `<option value="${htmlEscape(item.medicationId)}">${htmlEscape(item.drugName)} · ${htmlEscape(item.practitionerName)}</option>`;
+        form.elements.medicationId.disabled = true;
+        form.elements.openingDate.value = item.openingDate;
+        form.elements.quantity.value = item.quantity;
+        form.elements.orderUnit.value = item.orderUnit;
+        form.elements.conversion.value = item.conversion;
+        form.elements.reorderLevel.value = item.reorderLevel;
+        form.elements.leadTimeDays.value = item.leadTimeDays ?? "";
+        document.querySelector("[data-stock-prescription]").textContent = `Consumption unit: ${item.consumptionUnit}`;
+        document.querySelector("[data-stock-heading]").textContent = "Edit opening stock";
+        document.querySelector("[data-stock-submit]").textContent = "Update opening stock";
+        document.querySelector("[data-stock-cancel]").hidden = false;
+        form.scrollIntoView({ block: "start" });
+      } else {
+        if (!requirePatientProfile()) return;
+        state = loadState();
+        if (state.stockReceipts.some(receipt => receipt.patientId === patientKey() && receipt.openingStockId === id)) {
+          return showToast("Cannot delete this opening stock entry while receipts refer to it. Delete the receipts first.", true);
+        }
+        if (!window.confirm("Delete this opening stock entry?")) return;
+        const before = state.openingStocks;
+        state.openingStocks = before.filter(entry => !(entry.id === id && entry.patientId === patientKey()));
+        if (!saveState()) { state.openingStocks = before; return; }
+        if (editingOpeningStockId === id) resetOpeningStock();
+        renderOpeningStocks();
+        showToast("Opening stock deleted.");
+      }
+    });
+    renderOpeningStocks();
+  }
+
+  let editingReceiptId = null;
+
+  function fillReceiptMedicines() {
+    const form = document.querySelector("[data-receipt-form]");
+    const selected = form.elements.openingStockId.value;
+    const items = matchingStockEntries(stockPracticeFilter());
+    form.elements.openingStockId.innerHTML = '<option value="">Select an opening stock entry...</option>' + items.map(item =>
+      `<option value="${htmlEscape(item.id)}">${htmlEscape(item.drugName)} (${htmlEscape(item.consumptionUnit)})</option>`
+    ).join("");
+    form.elements.openingStockId.value = items.some(item => item.id === selected) ? selected : "";
+    form.elements.openingStockId.dispatchEvent(new Event("change"));
+  }
+
+  function resetReceiptForm() {
+    editingReceiptId = null;
+    document.querySelector("[data-stock-practice-filter]").disabled = false;
+    const form = document.querySelector("[data-receipt-form]");
+    form.reset();
+    form.elements.receivedAt.value = nowLocalInput();
+    form.elements.receivedAt.max = nowLocalInput();
+    form.elements.openingStockId.disabled = false;
+    fillReceiptMedicines();
+    document.querySelector("[data-receipt-heading]").textContent = "Add receipt";
+    document.querySelector("[data-receipt-submit]").textContent = "Save receipt";
+    document.querySelector("[data-receipt-cancel]").hidden = true;
+    document.querySelector("[data-receipt-error]").hidden = true;
+  }
+
+  function renderReceipts() {
+    const practiceId = stockPracticeFilter();
+    const stockIds = new Set(matchingStockEntries(practiceId).map(item => item.id));
+    const receipts = state.stockReceipts.filter(item => item.patientId === patientKey() && (!practiceId || stockIds.has(item.openingStockId))).sort((a, b) => b.receivedAt.localeCompare(a.receivedAt));
+    document.querySelector("[data-receipt-body]").innerHTML = receipts.map(item => `<tr><td>${htmlEscape(formatDateTime(item.receivedAt))}</td><td>${htmlEscape(item.vendor)}</td><td>${htmlEscape(item.drugName)}</td><td>${htmlEscape(item.quantity)} ${htmlEscape(item.receivingUnit)}</td><td>${htmlEscape(item.quantity * item.conversion)} ${htmlEscape(item.consumptionUnit)}</td><td><div class="table-actions"><button type="button" class="table-action" data-receipt-view="${htmlEscape(item.id)}">View</button>${canManageRecords() ? `<button type="button" class="table-action" data-receipt-edit="${htmlEscape(item.id)}">Edit</button><button type="button" class="table-action delete" data-receipt-delete="${htmlEscape(item.id)}">Delete</button>` : ""}</div></td></tr>`).join("");
+    document.querySelector("[data-receipt-count]").textContent = `${receipts.length} ${receipts.length === 1 ? "receipt" : "receipts"}`;
+    document.querySelector("[data-receipt-empty]").hidden = receipts.length > 0;
+  }
+
+  function saveReceipt(event) {
+    event.preventDefault();
+    if (!requirePatientProfile()) return;
+    const form = event.currentTarget;
+    const error = document.querySelector("[data-receipt-error]");
+    const fail = message => { error.textContent = message; error.hidden = false; };
+    const receivedAt = form.elements.receivedAt.value;
+    const vendor = form.elements.vendor.value.trim();
+    const quantity = Number(form.elements.quantity.value);
+    if (!vendor) return fail("Enter the vendor name.");
+    if (!receivedAt || receivedAt > nowLocalInput()) return fail("Enter a receipt date and time that is not in the future.");
+    if (!form.elements.quantity.value || !Number.isFinite(quantity) || quantity <= 0) return fail("Enter a receipt quantity greater than zero.");
+    state = loadState();
+    const previous = editingReceiptId && state.stockReceipts.find(item => item.id === editingReceiptId && item.patientId === patientKey());
+    if (editingReceiptId && !previous) return fail("This receipt is no longer available. Reload the page and try again.");
+    const stockId = previous ? previous.openingStockId : form.elements.openingStockId.value;
+    const stock = state.openingStocks.find(item => item.id === stockId && item.patientId === patientKey());
+    if (!stock) return fail("Select an available opening stock entry.");
+    if (!previous && !matchingStockEntries(stockPracticeFilter()).some(item => item.id === stock.id)) return fail("This medicine no longer matches the selected practice type. Refresh the selection and try again.");
+    if (receivedAt.slice(0, 10) < stock.openingDate) return fail("The receipt date cannot be before the opening stock date.");
+    const receivingUnit = previous ? previous.receivingUnit : stock.orderUnit;
+    const conversion = previous ? previous.conversion : stock.conversion;
+    const consumptionUnit = previous ? previous.consumptionUnit : stock.consumptionUnit;
+    if (typeof receivingUnit !== "string" || !receivingUnit.trim() || typeof consumptionUnit !== "string" || !consumptionUnit.trim() ||
+        !Number.isFinite(conversion) || conversion <= 0 || !Number.isFinite(quantity * conversion)) {
+      return fail("The receiving unit or conversion is invalid. Check the opening stock entry.");
+    }
+    const receipt = { id: previous ? previous.id : createId("RECEIPT"), patientId: patientKey(), openingStockId: stock.id,
+      drugName: stock.drugName, receivedAt, vendor, quantity, receivingUnit, conversion, consumptionUnit };
+    const before = state.stockReceipts.slice();
+    if (previous) state.stockReceipts = state.stockReceipts.map(item => item.id === previous.id && item.patientId === patientKey() ? receipt : item);
+    else state.stockReceipts.push(receipt);
+    if (!saveState()) { state.stockReceipts = before; return; }
+    resetReceiptForm();
+    renderReceipts();
+    showToast(previous ? "Receipt updated." : "Receipt saved.");
+  }
+
+  function initReceipts() {
+    renderAppHeader("dashboard");
+    const canEdit = canManageRecords();
+    document.querySelector("[data-receipt-form-card]").hidden = !canEdit;
+    document.querySelector("[data-receipt-access]").hidden = canEdit;
+    const form = document.querySelector("[data-receipt-form]");
+    form.elements.openingStockId.addEventListener("change", () => {
+      const item = state.openingStocks.find(stock => stock.id === form.elements.openingStockId.value && stock.patientId === patientKey());
+      document.querySelector("[data-receipt-unit]").textContent = item
+        ? `Receiving unit: ${item.orderUnit}. 1 ${item.orderUnit} = ${item.conversion} ${item.consumptionUnit}. Opening date: ${item.openingDate}.`
+        : form.elements.openingStockId.options.length > 1 ? "Select a medicine to see its receiving unit and conversion." : "No opening stock entries match this filter.";
+    });
+    fillStockPracticeFilter();
+    resetReceiptForm();
+    document.querySelector("[data-stock-practice-filter]").addEventListener("change", () => {
+      state = loadState();
+      fillStockPracticeFilter();
+      fillReceiptMedicines();
+      renderReceipts();
+    });
+    form.addEventListener("submit", saveReceipt);
+    document.addEventListener("click", event => {
+      if (event.target.closest("[data-receipt-cancel]")) { resetReceiptForm(); return; }
+      const button = event.target.closest("[data-receipt-view], [data-receipt-edit], [data-receipt-delete]");
+      if (!button) return;
+      state = loadState();
+      const id = button.dataset.receiptView || button.dataset.receiptEdit || button.dataset.receiptDelete;
+      const item = state.stockReceipts.find(receipt => receipt.id === id && receipt.patientId === patientKey());
+      if (!item) { renderReceipts(); return showToast("This receipt is no longer available.", true); }
+      if (button.dataset.receiptView) {
+        showDetails("Receipt", [["Medicine", item.drugName], ["Vendor", item.vendor], ["Received at", formatDateTime(item.receivedAt)],
+          ["Quantity", `${item.quantity} ${item.receivingUnit}`], ["Conversion", `1 ${item.receivingUnit} = ${item.conversion} ${item.consumptionUnit}`],
+          ["Consumption quantity", `${item.quantity * item.conversion} ${item.consumptionUnit}`], ["Order", "No linked order"]]);
+      } else if (button.dataset.receiptEdit) {
+        if (!requirePatientProfile()) return;
+        resetReceiptForm();
+        editingReceiptId = id;
+        document.querySelector("[data-stock-practice-filter]").disabled = true;
+        form.elements.openingStockId.value = item.openingStockId;
+        form.elements.openingStockId.disabled = true;
+        form.elements.receivedAt.value = item.receivedAt;
+        form.elements.vendor.value = item.vendor;
+        form.elements.quantity.value = item.quantity;
+        document.querySelector("[data-receipt-unit]").textContent = `Receiving unit: ${item.receivingUnit}. 1 ${item.receivingUnit} = ${item.conversion} ${item.consumptionUnit} (recorded conversion).`;
+        document.querySelector("[data-receipt-heading]").textContent = "Edit receipt";
+        document.querySelector("[data-receipt-submit]").textContent = "Update receipt";
+        document.querySelector("[data-receipt-cancel]").hidden = false;
+        form.scrollIntoView({ block: "start" });
+      } else {
+        if (!requirePatientProfile() || !window.confirm("Delete this receipt? Its quantity will be removed from estimated stock.")) return;
+        const before = state.stockReceipts;
+        state.stockReceipts = before.filter(receipt => !(receipt.id === id && receipt.patientId === patientKey()));
+        if (!saveState()) { state.stockReceipts = before; return; }
+        if (editingReceiptId === id) resetReceiptForm();
+        renderReceipts();
+        showToast("Receipt deleted.");
+      }
+    });
+    renderReceipts();
+  }
+
+  function estimatedStock(item) {
+    const opening = item.quantity;
+    if (!Number.isFinite(opening) || opening < 0 || !/^\d{4}-\d{2}-\d{2}$/.test(item.openingDate) || item.openingDate > todayInput()) {
+      return { value: null, reason: "Invalid opening balance or date" };
+    }
+    let consumed = 0;
+    for (const log of state.medicationLogs) {
+      if (log.patientId !== patientKey() || typeof log.drugName !== "string" ||
+          log.drugName.trim().toLowerCase() !== item.drugName.trim().toLowerCase()) continue;
+      if (typeof log.takenAt !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(log.takenAt)) {
+        return { value: null, reason: "Check medication log dates" };
+      }
+      if (log.takenAt.slice(0, 10) < item.openingDate) continue;
+      if (log.takenAt > nowLocalInput()) return { value: null, reason: "Check future medication log dates" };
+      if (!Number.isFinite(log.quantity) || log.quantity <= 0 ||
+          typeof log.unit !== "string" || log.unit.trim().toLowerCase() !== item.consumptionUnit.trim().toLowerCase()) {
+        return { value: null, reason: "Check quantity and unit on medication logs" };
+      }
+      consumed += log.quantity;
+    }
+    let received = 0;
+    for (const receipt of state.stockReceipts) {
+      if (receipt.patientId !== patientKey() || receipt.openingStockId !== item.id) continue;
+      if (typeof receipt.receivedAt !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(receipt.receivedAt) ||
+          receipt.receivedAt.slice(0, 10) < item.openingDate || receipt.receivedAt > nowLocalInput() ||
+          !Number.isFinite(receipt.quantity) || receipt.quantity <= 0 ||
+          !Number.isFinite(receipt.conversion) || receipt.conversion <= 0 ||
+          typeof receipt.consumptionUnit !== "string" || receipt.consumptionUnit.trim().toLowerCase() !== item.consumptionUnit.trim().toLowerCase()) {
+        return { value: null, reason: "Check receipt dates, quantities and units" };
+      }
+      received += receipt.quantity * receipt.conversion;
+    }
+    const value = opening + received - consumed;
+    return Number.isFinite(value) ? { value, reason: "" } : { value: null, reason: "Stock movements are too large to calculate" };
+  }
+
+  function stockPracticeGroup(medicine) {
+    if (!medicine) return { key: "no-prescription", label: "No current prescription", rank: 2 };
+    const practices = new Map(medicine.rows.map(({ rx }) => {
+      const practice = medicationPractice(rx.practitionerId);
+      return [practice.key, practice];
+    }));
+    const sorted = [...practices.values()].sort((a, b) => a.name.localeCompare(b.name) || String(a.key).localeCompare(String(b.key)));
+    const names = sorted.map(practice => practice.name).join(" + ");
+    return {
+      key: JSON.stringify(sorted.map(practice => practice.key).sort()),
+      label: sorted.length > 1 ? `Shared: ${names}` : names,
+      rank: sorted.some(practice => practice.key === null) ? 1 : 0
+    };
+  }
+
+  function stockGroupedRows(rows, columns) {
+    const groups = new Map();
+    rows.forEach(({ group, row }) => {
+      if (!groups.has(group.key)) groups.set(group.key, { ...group, rows: [] });
+      groups.get(group.key).rows.push(row);
+    });
+    return [...groups.values()].sort((a, b) => a.rank - b.rank || a.label.localeCompare(b.label) || a.key.localeCompare(b.key))
+      .map(group => `<tr class="stock-group-heading"><th scope="row" colspan="${columns}">${htmlEscape(group.label)}</th></tr>${group.rows.join("")}`).join("");
+  }
+
+  function renderSafetyStock() {
+    const medicines = new Map(availableStockMedications().map(group => [group.name.toLowerCase(), group]));
+    const entries = state.openingStocks.filter(item => item.patientId === patientKey())
+      .sort((a, b) => a.drugName.localeCompare(b.drugName));
+    const format = value => new Intl.NumberFormat(undefined, { maximumSignificantDigits: 15 }).format(value);
+    const orders = [];
+    const stockRows = entries.map(item => {
+      const group = medicines.get(item.drugName.trim().toLowerCase());
+      const practiceGroup = stockPracticeGroup(group);
+      const matchesUnit = group && typeof item.consumptionUnit === "string" && item.consumptionUnit.trim() &&
+        group.rows.every(({ med }) => typeof med.unit === "string" && med.unit.trim().toLowerCase() === item.consumptionUnit.trim().toLowerCase());
+      const validDoses = matchesUnit && group.rows.every(({ med }) => Number.isFinite(Number(med.quantity)) && Number(med.quantity) > 0 &&
+        Array.isArray(med.timings) && med.timings.length > 0 && new Set(med.timings).size === med.timings.length && med.timings.every(timing => RX_TIMINGS.includes(timing)));
+      const sum = validDoses ? group.rows.reduce((total, { med }) => total + Number(med.quantity) * med.timings.length, 0) : null;
+      const dosage = Number.isFinite(sum) ? sum : null;
+      const unit = htmlEscape(item.consumptionUnit);
+      const dosageText = dosage === null ? (group ? "Unavailable: check dose or units" : "No current prescription") : `${format(dosage)} ${unit}/day`;
+      const quantityText = value => Number.isFinite(value) ? `${format(value)} ${unit}` : "Unavailable";
+      const safety = dosage === null ? "Unavailable" : quantityText(dosage);
+      const lead = item.leadTimeDays;
+      const hasLead = Number.isSafeInteger(lead) && lead >= 0;
+      const demand = dosage !== null && hasLead ? quantityText(dosage * lead) : "Unavailable";
+      const thresholdValue = dosage !== null && hasLead ? dosage * (lead + 1) : null;
+      const threshold = thresholdValue !== null ? quantityText(thresholdValue) : "Unavailable";
+      const stock = typeof item.consumptionUnit === "string" && item.consumptionUnit.trim()
+        ? estimatedStock(item) : { value: null, reason: "Check opening stock unit" };
+      const stockText = stock.value === null ? `Unavailable: ${htmlEscape(stock.reason)}` : quantityText(stock.value);
+      const coverage = stock.value !== null && stock.value >= 0 && dosage !== null && dosage > 0
+        ? Math.floor(stock.value / dosage) : null;
+      const daysText = Number.isSafeInteger(coverage) ? `${format(coverage)} days` : "Unavailable";
+      let status = "Not available: check stock, dosage and lead time";
+      if (stock.value !== null && Number.isFinite(thresholdValue)) {
+        if (stock.value > thresholdValue) {
+          status = "Above reorder threshold";
+        } else {
+          const conversion = Number(item.conversion);
+          const required = dosage * (30 + lead) - stock.value;
+          const orderUnits = Math.ceil(required / conversion);
+          if (Number.isFinite(conversion) && conversion > 0 && typeof item.orderUnit === "string" && item.orderUnit.trim() &&
+              Number.isSafeInteger(orderUnits) && orderUnits > 0) {
+            const risk = stock.value < dosage * lead ? "May run out before delivery" : "Reorder";
+            status = risk;
+            orders.push({ group: practiceGroup, row: `<tr><td>${htmlEscape(item.drugName)}</td><td>${htmlEscape(risk)}</td><td>${format(orderUnits)} ${htmlEscape(item.orderUnit)}</td><td>${quantityText(orderUnits * conversion)}</td></tr>` });
+          } else {
+            status = "Reorder: check order unit and conversion";
+          }
+        }
+      }
+      return { group: practiceGroup, row: `<tr><td>${htmlEscape(item.drugName)}</td><td>${dosageText}</td><td>${stockText}</td><td>${threshold}</td><td>${daysText}</td><td>${hasLead ? `${lead} days` : "Not set"}</td><td>Not available</td><td>${safety}</td><td>${demand}</td><td>${htmlEscape(item.reorderLevel)} ${unit}</td><td>${status}</td></tr>` };
+    });
+    document.querySelector("[data-safety-body]").innerHTML = stockGroupedRows(stockRows, 11);
+    document.querySelector("[data-safety-empty]").hidden = entries.length > 0;
+    document.querySelector("[data-order-body]").innerHTML = stockGroupedRows(orders, 4);
+    document.querySelector("[data-order-empty]").hidden = orders.length > 0;
+  }
+
+  function initSafetyStock() {
+    renderAppHeader("safety-stock");
+    const refresh = () => { state = loadState(); renderSafetyStock(); };
+    renderSafetyStock();
+    window.addEventListener("storage", event => {
+      if (event.key === STORE_KEY || event.key === USER_KEY || event.key === null) refresh();
+    });
+    window.addEventListener("pageshow", refresh);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+  }
+
+  function displayedMedicationLogs() {
+    const day = document.querySelector("[data-log-date]").value;
+    return state.medicationLogs.filter(log => log.patientId === patientKey() && (!day || log.takenAt.slice(0, 10) === day))
+      .sort((a, b) => b.takenAt.localeCompare(a.takenAt));
+  }
+
+  function medicationPractice(practitionerId) {
+    const practitioner = state.practitioners.find(item => item.id === practitionerId);
+    const practice = practitioner && state.practiceTypes.find(item => item.id === practitioner.practiceId);
+    return practice ? { key: practice.id, name: practice.name } : { key: null, name: "Practice type unavailable" };
+  }
+
+  function medicationColumns() {
+    const groups = new Map();
+    const getGroup = practitionerId => {
+      const practice = medicationPractice(practitionerId);
+      if (!groups.has(practice.key)) groups.set(practice.key, { ...practice, schedule: [], logs: [] });
+      return groups.get(practice.key);
+    };
+    const prescriptions = latestOpenPrescriptions();
+    prescriptions.forEach(rx => {
+      if (state.prescriptionMedications.some(med => med.prescriptionId === rx.id)) getGroup(rx.practitionerId);
+    });
+    medicationSchedule(todayInput()).forEach(entry => getGroup(entry.rx.practitionerId).schedule.push(entry));
+    displayedMedicationLogs().forEach(log => {
+      const rx = state.prescriptions.find(item => item.id === log.prescriptionId && item.patientId === log.patientId);
+      getGroup(log.practitionerId || rx?.practitionerId).logs.push(log);
+    });
+    return [...groups.values()].sort((a, b) => {
+      if (a.key === null) return b.key === null ? 0 : 1;
+      if (b.key === null) return -1;
+      return a.name.localeCompare(b.name) || a.key.localeCompare(b.key);
+    });
+  }
+
   function renderSchedule() {
     const box = document.querySelector("[data-schedule]");
     if (!box) return;
-    const day = todayInput();
     const canEdit = canManageRecords();
-    const entries = medicationSchedule(day);
-    box.innerHTML = entries.map(({ med, timing }) => `
+    const columns = medicationColumns();
+    box.innerHTML = columns.map(column => `<section class="med-practice-column"><h3>${htmlEscape(column.name)}</h3><div class="med-practice-list">${column.schedule.map(({ med, rx, timing }) => `
       <div class="med-item">
         <div class="med-name"><b>${htmlEscape(med.drugName)}</b> - ${htmlEscape(med.quantity)} ${htmlEscape(med.unit)}</div>
+        <div class="med-practitioner">${htmlEscape(rxPractitionerName(rx.practitionerId))}</div>
         <div class="med-time">${timing}</div>
         <div class="med-meal">${htmlEscape(med.mealQualifier)}</div>
         ${canEdit ? `<div class="med-actions"><input type="datetime-local" value="${nowLocalInput()}" max="${nowLocalInput()}" aria-label="Time taken"><button type="button" class="med-take" data-take-med="${htmlEscape(med.id)}" data-take-timing="${timing}">Mark Taken</button></div>` : ""}
-      </div>`).join("");
-    document.querySelector("[data-schedule-empty]").hidden = entries.length > 0;
+      </div>`).join("") || '<p class="med-practice-empty">No medications due.</p>'}</div></section>`).join("");
+    document.querySelector("[data-schedule-empty]").hidden = columns.length > 0;
   }
 
   function renderMedLog() {
     const list = document.querySelector("[data-med-log]");
     if (!list) return;
-    const day = document.querySelector("[data-log-date]").value;
-    const logs = state.medicationLogs.filter(log => log.patientId === patientKey() && (!day || log.takenAt.slice(0, 10) === day)).sort((a, b) => b.takenAt.localeCompare(a.takenAt));
-    list.innerHTML = logs.map(log => `<div class="log-row"><div><b>${htmlEscape(log.drugName)}</b> — taken<small>${htmlEscape(formatDateTime(log.takenAt))}</small></div>${canManageRecords() ? `<div class="table-actions"><button class="table-action" type="button" data-log-view="${htmlEscape(log.id)}">View</button><button class="table-action" type="button" data-log-edit="${htmlEscape(log.id)}">Edit</button><button class="table-action delete" type="button" data-log-delete="${htmlEscape(log.id)}">Delete</button></div>` : ""}</div>`).join("");
-    document.querySelector("[data-log-empty]").hidden = logs.length > 0;
+    const columns = medicationColumns();
+    list.innerHTML = columns.map(column => `<section class="med-practice-column"><h3>${htmlEscape(column.name)}</h3><div class="med-practice-list">${column.logs.map(log => {
+      const dose = Number.isFinite(log.quantity) && log.quantity > 0 && typeof log.unit === "string" && log.unit.trim()
+        ? `${htmlEscape(log.quantity)} ${htmlEscape(log.unit)} taken`
+        : "taken (quantity not recorded)";
+      const rx = state.prescriptions.find(item => item.id === log.prescriptionId && item.patientId === log.patientId);
+      return `<div class="log-row"><div><b>${htmlEscape(log.drugName)}</b> — ${dose}<small>${htmlEscape(rxPractitionerName(log.practitionerId || rx?.practitionerId))} · ${htmlEscape(formatDateTime(log.takenAt))}</small></div>${canManageRecords() ? `<div class="table-actions"><button class="table-action" type="button" data-log-view="${htmlEscape(log.id)}">View</button><button class="table-action" type="button" data-log-edit="${htmlEscape(log.id)}">Edit</button><button class="table-action delete" type="button" data-log-delete="${htmlEscape(log.id)}">Delete</button></div>` : ""}</div>`;
+    }).join("") || '<p class="med-practice-empty">No medication logs for this selection.</p>'}</div></section>`).join("");
+    document.querySelector("[data-log-empty]").hidden = columns.length > 0;
   }
 
   function viewLog(id) {
     const log = state.medicationLogs.find(entry => entry.id === id);
     if (!log) return;
-    const med = state.prescriptionMedications.find(entry => entry.id === log.medicationId);
     showDetails("Medication log", [
-      ["Medicine", med ? rxDescribeMed(med) : log.drugName],
+      ["Medicine", log.drugName],
+      ["Quantity taken", Number.isFinite(log.quantity) && log.unit ? `${log.quantity} ${log.unit}` : "Not recorded — edit the log if known"],
       ["Scheduled", `${log.scheduledDate} · ${log.timing}`],
       ["Taken at", formatDateTime(log.takenAt)],
       ["Practitioner", rxPractitionerName(log.practitionerId)],
@@ -2046,7 +3008,7 @@
       dialog.dataset.logEditDialog = "";
       document.body.append(dialog);
     }
-    dialog.innerHTML = `<form class="record-form" novalidate><h2>Edit medication log</h2><div class="symptom-form"><p class="rx-hint">${htmlEscape(log.drugName)} · ${htmlEscape(log.timing)}</p><label class="form-field">Time taken<input type="datetime-local" name="takenAt" required value="${htmlEscape(log.takenAt)}" max="${nowLocalInput()}"></label><p class="form-error" data-log-error role="alert" hidden></p><div class="symptom-actions"><button type="button" class="button button-secondary" data-log-cancel>Cancel</button><button type="submit" class="button button-primary">Update log</button></div></div></form>`;
+    dialog.innerHTML = `<form class="record-form" novalidate><h2>Edit medication log</h2><div class="symptom-form"><p class="rx-hint">${htmlEscape(log.drugName)} · ${htmlEscape(log.timing)}</p><label class="form-field">Time taken<input type="datetime-local" name="takenAt" required value="${htmlEscape(log.takenAt)}" max="${nowLocalInput()}"></label><p class="rx-hint">Enter the actual quantity and unit taken if known. Older logs without these details cannot be included in estimated stock.</p><div class="symptom-row"><label class="form-field">Quantity taken<input type="number" name="quantity" min="0" step="any" value="${htmlEscape(log.quantity ?? "")}"></label><label class="form-field">Unit taken<input name="unit" maxlength="30" value="${htmlEscape(log.unit ?? "")}"></label></div><p class="form-error" data-log-error role="alert" hidden></p><div class="symptom-actions"><button type="button" class="button button-secondary" data-log-cancel>Cancel</button><button type="submit" class="button button-primary">Update log</button></div></div></form>`;
     dialog.querySelector("[data-log-cancel]").addEventListener("click", () => dialog.close());
     dialog.querySelector("form").addEventListener("submit", event => {
       event.preventDefault();
@@ -2057,13 +3019,25 @@
         error.hidden = false;
         return;
       }
-      const previous = log.takenAt;
+      const quantityValue = event.currentTarget.elements.quantity.value;
+      const unit = event.currentTarget.elements.unit.value.trim();
+      const quantity = Number(quantityValue);
+      if ((quantityValue || unit) && (!quantityValue || !Number.isFinite(quantity) || quantity <= 0 || !unit)) {
+        error.textContent = "Enter both a quantity greater than zero and its unit, or leave both blank if unknown.";
+        error.hidden = false;
+        return;
+      }
+      const previous = { ...log };
       log.takenAt = value;
+      if (quantityValue) { log.quantity = quantity; log.unit = unit; }
+      else { delete log.quantity; delete log.unit; }
       if (!saveState()) {
-        log.takenAt = previous;
+        Object.keys(log).forEach(key => delete log[key]);
+        Object.assign(log, previous);
         return;
       }
       dialog.close();
+      renderSchedule();
       renderMedLog();
       showToast("Medication log updated.");
     });
@@ -2097,7 +3071,10 @@
       renderSchedule();
       return showToast("This dose is no longer due in the current schedule.", true);
     }
-    const log = { id: createId("MEDLOG"), patientId: patientKey(), practitionerId: med.practitionerId, prescriptionId: med.prescriptionId, medicationId: med.id, drugName: med.drugName, timing: button.dataset.takeTiming, scheduledDate: todayInput(), takenAt };
+    if (!Number.isFinite(Number(med.quantity)) || Number(med.quantity) <= 0 || typeof med.unit !== "string" || !med.unit.trim()) {
+      return showToast("The prescribed dose or unit is invalid. Correct the prescription before marking it taken.", true);
+    }
+    const log = { id: createId("MEDLOG"), patientId: patientKey(), practitionerId: med.practitionerId, prescriptionId: med.prescriptionId, medicationId: med.id, drugName: med.drugName, quantity: Number(med.quantity), unit: med.unit, timing: button.dataset.takeTiming, scheduledDate: todayInput(), takenAt };
     state.medicationLogs.push(log);
     if (!saveState()) {
       state.medicationLogs.pop();
@@ -2120,7 +3097,7 @@
       renderMedLog();
     };
     const dateInput = document.querySelector("[data-log-date]");
-    dateInput.addEventListener("change", renderMedLog);
+    dateInput.addEventListener("change", () => { renderSchedule(); renderMedLog(); });
     document.addEventListener("click", event => {
       const take = event.target.closest("[data-take-med]");
       if (take) markTaken(take);
@@ -2348,7 +3325,7 @@
 
   // Prescriptions of this patient from the practitioner that request the given test.
   function labRequests(practitionerId, testId) {
-    return state.prescriptions.filter(rx => rx.patientId === patientKey() && rx.practitionerId === practitionerId && state.prescriptionDiagnoses.some(dx => dx.prescriptionId === rx.id && dx.testId === testId)).sort((a, b) => b.issuedAt.localeCompare(a.issuedAt));
+    return state.prescriptions.filter(rx => rx.patientId === patientKey() && isClinicalRx(rx) && rx.practitionerId === practitionerId && state.prescriptionDiagnoses.some(dx => dx.prescriptionId === rx.id && dx.testId === testId)).sort((a, b) => b.issuedAt.localeCompare(a.issuedAt));
   }
 
   function refreshLabRequests(selectedRx = "") {
@@ -2432,7 +3409,7 @@
     editingLabId = existing?.id || null;
     dialog.querySelector("[data-lab-heading]").textContent = existing ? "Edit Lab Test" : "Log Lab Test";
     const facilities = state.facilities.filter(item => item.status !== "Deleted" || item.id === existing?.facilityId).sort((a, b) => a.name.localeCompare(b.name));
-    const tests = state.tests.filter(item => (item.status !== "Deleted" && state.parameters.some(parameter => parameter.testId === item.id && parameter.status !== "Deleted")) || item.id === existing?.testId).sort((a, b) => a.name.localeCompare(b.name));
+    const tests = state.tests.filter(item => (isClinicalTest(item) && item.status !== "Deleted" && state.parameters.some(parameter => parameter.testId === item.id && parameter.status !== "Deleted")) || item.id === existing?.testId).sort((a, b) => a.name.localeCompare(b.name));
     form.elements.facilityId.innerHTML = `<option value="">Select facility...</option>${facilities.map(item => `<option value="${htmlEscape(item.id)}">${htmlEscape(item.name)}</option>`).join("")}`;
     form.elements.testId.innerHTML = `<option value="">Select test...</option>${tests.map(item => `<option value="${htmlEscape(item.id)}">${htmlEscape(item.name)}</option>`).join("")}`;
     form.elements.facilityId.value = existing?.facilityId || "";
@@ -2541,24 +3518,41 @@
   }
 
   // series: [{name, color, axis: "left"|"right", dashed, area, points: [{t, v}]}]; refLines: [{label, value, color}]
-  function renderLineChart(container, { series, refLines = [], leftLabel = "", rightLabel = "" }) {
+  function renderLineChart(container, { series, refLines = [], leftLabel = "", rightLabel = "", recordedDatesOnly = false, fixedLeftAxis = false }) {
     const all = series.flatMap(item => item.points);
     if (!all.length) {
       container.innerHTML = '<div class="empty-state"><span>♡</span><b>Nothing to chart yet</b><p>Record a few entries to see the trend.</p></div>';
       return;
     }
     const H = 365, left = 90, right = series.some(item => item.axis === "right") ? 62 : 24, top = 42, bottom = 88;
-    const first = new Date(Math.min(...all.map(p => p.t)));
-    const last = new Date(Math.max(...all.map(p => p.t)));
+    const dateSource = all.map(p => p.t);
+    const first = new Date(Math.min(...dateSource));
+    const last = new Date(Math.max(...dateSource));
     first.setHours(0, 0, 0, 0);
     last.setHours(0, 0, 0, 0);
+    const dayStart = time => { const date = new Date(time); date.setHours(0, 0, 0, 0); return date.getTime(); };
     const xTicks = [];
-    for (const date = new Date(first); date <= last; date.setDate(date.getDate() + 1)) xTicks.push(date.getTime());
+    if (recordedDatesOnly) {
+      xTicks.push(...new Set(all.map(point => dayStart(point.t))));
+      xTicks.sort((a, b) => a - b);
+    } else {
+      for (const date = new Date(first); date <= last; date.setDate(date.getDate() + 1)) xTicks.push(date.getTime());
+    }
     const end = new Date(last);
     end.setDate(end.getDate() + 1);
     const t0 = first.getTime(), t1 = end.getTime();
-    const W = Math.max(900, left + right + xTicks.length * 75);
-    const x = t => left + ((t - t0) / (t1 - t0)) * (W - left - right);
+    const W = Math.max(900, left + right + xTicks.length * (recordedDatesOnly ? 110 : 75));
+    const dayIndexes = new Map(xTicks.map((time, index) => [time, index]));
+    const slot = (W - left - right) / xTicks.length;
+    const x = t => {
+      if (!recordedDatesOnly) return left + ((t - t0) / (t1 - t0)) * (W - left - right);
+      const start = dayStart(t);
+      const next = new Date(start);
+      next.setDate(next.getDate() + 1);
+      const fraction = (t - start) / (next.getTime() - start);
+      return left + (dayIndexes.get(start) + 0.2 + fraction * 0.6) * slot;
+    };
+    const tickX = t => recordedDatesOnly ? left + (dayIndexes.get(t) + 0.5) * slot : x(t);
     const scaleFor = axis => {
       const values = series.filter(item => item.axis === axis).flatMap(item => item.points.map(p => p.v));
       if (axis === "left") values.push(...refLines.map(line => line.value));
@@ -2566,15 +3560,18 @@
     };
     const scales = { left: scaleFor("left"), right: scaleFor("right") };
     const y = (axis, v) => { const s = scales[axis]; return H - bottom - ((v - s.lo) / (s.hi - s.lo)) * (H - top - bottom); };
-    const parts = [];
+    const parts = [], leftAxisParts = [];
     const primary = scales.left || scales.right;
     const primaryAxis = scales.left ? "left" : "right";
     primary.ticks.forEach(v => {
       parts.push(`<line x1="${left}" x2="${W - right}" y1="${y(primaryAxis, v)}" y2="${y(primaryAxis, v)}" class="chart-grid"/>`);
-      if (scales.left) parts.push(`<text x="${left - 8}" y="${y("left", v) + 4}" text-anchor="end" class="chart-tick">${v}</text>`);
+      if (scales.left) (fixedLeftAxis ? leftAxisParts : parts).push(`<text x="${left - 8}" y="${y("left", v) + 4}" text-anchor="end" class="chart-tick">${v}</text>`);
     });
     if (scales.right) scales.right.ticks.forEach(v => parts.push(`<text x="${W - right + 8}" y="${y("right", v) + 4}" class="chart-tick">${v}</text>`));
-    xTicks.forEach(t => parts.push(`<line x1="${x(t)}" x2="${x(t)}" y1="${H - bottom}" y2="${H - bottom + 4}" class="chart-axis"/><text transform="translate(${x(t)} ${H - bottom + 14}) rotate(-40)" text-anchor="end" class="chart-tick">${htmlEscape(chartDate(t, false))}</text>`));
+    xTicks.forEach(t => {
+      const position = tickX(t);
+      parts.push(`<line x1="${position}" x2="${position}" y1="${H - bottom}" y2="${H - bottom + 4}" class="chart-axis"/><text transform="translate(${position} ${H - bottom + 14}) rotate(-40)" text-anchor="end" class="chart-tick">${htmlEscape(chartDate(t, false))}</text>`);
+    });
     parts.push(`<line x1="${left}" x2="${W - right}" y1="${H - bottom}" y2="${H - bottom}" class="chart-axis"/>`);
     refLines.forEach(line => parts.push(`<line x1="${left}" x2="${W - right}" y1="${y("left", line.value)}" y2="${y("left", line.value)}" stroke="${line.color}" stroke-width="1.5" stroke-dasharray="5 4"><title>${htmlEscape(line.label)}: ${line.value}</title></line>`));
     series.forEach(item => {
@@ -2584,11 +3581,16 @@
       if (pts.length > 1) parts.push(`<polyline points="${coords.join(" ")}" fill="none" stroke="${item.color}" stroke-width="2.5" stroke-linejoin="round"${item.dashed ? ' stroke-dasharray="3 5" stroke-linecap="round"' : ""}/>`);
       pts.forEach(p => parts.push(`<circle cx="${x(p.t).toFixed(1)}" cy="${y(item.axis, p.v).toFixed(1)}" r="4" fill="${item.color}" stroke="#fff" stroke-width="1.5"><title>${htmlEscape(item.name)}: ${p.v} (${htmlEscape(chartDate(p.t, true))})</title></circle>`));
     });
-    if (leftLabel) parts.push(`<text transform="translate(14 ${(top + H - bottom) / 2}) rotate(-90)" text-anchor="middle" class="chart-axis-label">${htmlEscape(leftLabel)}</text>`);
+    if (leftLabel) (fixedLeftAxis ? leftAxisParts : parts).push(`<text transform="translate(14 ${(top + H - bottom) / 2}) rotate(-90)" text-anchor="middle" class="chart-axis-label">${htmlEscape(leftLabel)}</text>`);
     if (rightLabel) parts.push(`<text transform="translate(${W - 12} ${(top + H - bottom) / 2}) rotate(90)" text-anchor="middle" class="chart-axis-label">${htmlEscape(rightLabel)}</text>`);
     const legend = [...series.map(item => ({ name: item.name, color: item.color, dashed: item.dashed })), ...refLines.map(line => ({ name: line.label, color: line.color, dashed: true }))]
       .map(item => `<span class="chart-key"><i style="background:${item.color}${item.dashed ? ";opacity:.75" : ""}"></i>${htmlEscape(item.name)}</span>`).join("");
-    container.innerHTML = `<div class="chart-legend">${legend}</div><div class="chart-scroll" tabindex="0" role="region" aria-label="Trend chart, scroll horizontally to see all dates"><svg viewBox="0 0 ${W} ${H}" class="chart-svg" style="min-width:${W}px" role="img" aria-label="Trend chart">${parts.join("")}</svg></div>`;
+    const axisDescription = `Vertical scale${leftLabel ? ` in ${leftLabel}` : ""}: ${scales.left ? scales.left.ticks.join(", ") : ""}`;
+    const fixedAxis = fixedLeftAxis ? `<svg class="chart-fixed-axis" viewBox="0 0 ${left} ${H}" role="img" aria-label="${htmlEscape(axisDescription)}">${leftAxisParts.join("")}</svg>` : "";
+    const viewLeft = fixedLeftAxis ? left : 0;
+    const viewWidth = W - viewLeft;
+    const chartWidth = fixedLeftAxis ? `width:${viewWidth}px;min-width:${viewWidth}px` : `min-width:${W}px`;
+    container.innerHTML = `<div class="chart-legend">${legend}</div><div class="${fixedLeftAxis ? "chart-with-fixed-axis" : ""}">${fixedAxis}<div class="chart-scroll" tabindex="0" role="region" aria-label="Trend chart, scroll horizontally to see all dates"><svg viewBox="${viewLeft} 0 ${viewWidth} ${H}" class="chart-svg" style="${chartWidth}" role="img" aria-label="Trend chart">${parts.join("")}</svg></div></div>`;
   }
 
   function parseLimitRange(text) {
@@ -2627,28 +3629,153 @@
     const id = select.value;
     const parameter = state.parameters.find(item => item.id === id);
     const container = document.querySelector("[data-lab-chart]");
-    if (!parameter) { renderLineChart(container, { series: [] }); return; }
+    const latest = document.querySelector("[data-lab-latest]");
+    if (!parameter) { latest.textContent = ""; renderLineChart(container, { series: [] }); return; }
     const points = [];
     mine.forEach(record => record.values.filter(entry => entry.parameterId === id).forEach(entry => {
       const value = Number(entry.value);
-      if (Number.isFinite(value)) points.push({ t: new Date(record.recordedAt).getTime(), v: value });
+      const time = new Date(record.recordedAt).getTime();
+      if (Number.isFinite(value) && Number.isFinite(time)) points.push({ t: time, v: value });
     }));
+    latest.textContent = points.length ? `Latest recorded result: ${chartDate(Math.max(...points.map(point => point.t)), true)}` : "No recorded results for this parameter.";
     const gender = activeGender();
     const range = parseLimitRange(gender === "Female" ? parameter.femaleLimits : parameter.maleLimits);
     const refLines = range ? [{ label: "Reference Range LOW", value: range[0], color: "#e76f51" }, { label: "Reference Range HIGH", value: range[1], color: "#2a9d8f" }] : [];
-    renderLineChart(container, { series: [{ name: parameter.unit && !parameter.name.includes(`(${parameter.unit})`) ? `${parameter.name} (${parameter.unit})` : parameter.name, color: "#9b51e0", axis: "left", area: true, points }], refLines, leftLabel: parameter.unit || "" });
+    renderLineChart(container, { series: [{ name: parameter.unit && !parameter.name.includes(`(${parameter.unit})`) ? `${parameter.name} (${parameter.unit})` : parameter.name, color: "#9b51e0", axis: "left", area: true, points }], refLines, leftLabel: parameter.unit || "", recordedDatesOnly: true });
   }
 
   function initAnalytics() {
     renderAppHeader("analytics");
-    renderVitalsTrend();
     const select = document.querySelector("[data-lab-measure]");
-    const recorded = new Set(state.labResults.filter(item => item.patientId === patientKey()).flatMap(item => item.values.map(entry => entry.parameterId)));
-    const options = state.parameters.filter(item => recorded.has(item.id)).map(item => ({ id: item.id, label: `${state.tests.find(test => test.id === item.testId)?.name.replace(/\s*\(.*\)\s*$/, "") || "Unlinked"} — ${item.name}` })).sort((a, b) => a.label.localeCompare(b.label));
-    select.innerHTML = options.map(item => `<option value="${htmlEscape(item.id)}">${htmlEscape(item.label)}</option>`).join("") || '<option value="">No lab results recorded</option>';
-    select.disabled = !options.length;
-    select.addEventListener("change", renderLabTrend);
-    renderLabTrend();
+    const search = document.querySelector("[data-lab-search]");
+    let selectedLabId = "";
+    let labOptions = [];
+    const filterLabOptions = () => {
+      const query = search.value.trim().toLocaleLowerCase();
+      const matches = labOptions.filter(item => item.label.toLocaleLowerCase().includes(query));
+      const selected = matches.find(item => item.id === selectedLabId);
+      select.innerHTML = matches.map(item => `<option value="${htmlEscape(item.id)}">${htmlEscape(item.label)}</option>`).join("") ||
+        `<option value="">${labOptions.length ? "No matching lab results" : "No lab results recorded"}</option>`;
+      select.disabled = !matches.length;
+      if (selected) select.value = selected.id;
+      else if (matches.length) selectedLabId = select.value;
+      else selectedLabId = "";
+      renderLabTrend();
+    };
+    const render = () => {
+      const recorded = new Set(state.labResults.filter(item => item.patientId === patientKey()).flatMap(item => item.values.map(entry => entry.parameterId)));
+      labOptions = state.parameters.filter(item => recorded.has(item.id)).map(item => ({ id: item.id, label: `${state.tests.find(test => test.id === item.testId)?.name.replace(/\s*\(.*\)\s*$/, "") || "Unlinked"} — ${item.name}` })).sort((a, b) => a.label.localeCompare(b.label));
+      renderVitalsTrend();
+      filterLabOptions();
+    };
+    let displayedState = window.localStorage.getItem(STORE_KEY);
+    let displayedUser = window.localStorage.getItem(USER_KEY);
+    const refresh = () => {
+      const saved = window.localStorage.getItem(STORE_KEY);
+      const user = window.localStorage.getItem(USER_KEY);
+      if (saved === displayedState && user === displayedUser) return;
+      const containers = ["[data-vitals-chart]", "[data-lab-chart]"];
+      const positions = containers.map(selector => {
+        const chart = document.querySelector(`${selector} .chart-scroll`);
+        return chart ? { left: chart.scrollLeft, atEnd: chart.scrollWidth - chart.clientWidth - chart.scrollLeft <= 1 } : null;
+      });
+      state = loadState();
+      displayedState = saved;
+      displayedUser = user;
+      render();
+      containers.forEach((selector, index) => {
+        const chart = document.querySelector(`${selector} .chart-scroll`);
+        if (chart && positions[index]) chart.scrollLeft = positions[index].atEnd ? chart.scrollWidth : positions[index].left;
+      });
+    };
+    select.addEventListener("change", () => { selectedLabId = select.value; renderLabTrend(); });
+    search.addEventListener("input", filterLabOptions);
+    render();
+    window.addEventListener("storage", event => {
+      if (event.key === STORE_KEY || event.key === USER_KEY || event.key === null) refresh();
+    });
+    window.addEventListener("pageshow", refresh);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+  }
+
+  function initAdvancedAnalytics() {
+    renderAppHeader("advanced-analytics");
+    const search = document.querySelector("[data-compare-search]");
+    const choices = document.querySelector("[data-compare-choices]");
+    const charts = document.querySelector("[data-compare-charts]");
+    const message = document.querySelector("[data-compare-message]");
+    let selected = new Set();
+    let options = [];
+    let currentUser = window.localStorage.getItem(USER_KEY);
+    let currentState = window.localStorage.getItem(STORE_KEY);
+
+    const renderChoices = () => {
+      const query = search.value.trim().toLocaleLowerCase();
+      const matches = options.filter(option => option.label.toLocaleLowerCase().includes(query));
+      choices.innerHTML = matches.map(option =>
+        `<label class="compare-choice"><input type="checkbox" value="${htmlEscape(option.id)}"${selected.has(option.id) ? " checked" : ""}><span>${htmlEscape(option.label)}</span></label>`
+      ).join("") || `<p class="rx-hint">${options.length ? "No matching parameters." : "No recorded lab parameters are available."}</p>`;
+      document.querySelector("[data-compare-count]").textContent = `${selected.size} selected`;
+    };
+
+    const renderCharts = () => {
+      const chosen = options.filter(option => selected.has(option.id));
+      const datasets = chosen.map(option => {
+        const points = [];
+        state.labResults.filter(record => record.patientId === patientKey()).forEach(record => {
+          const time = record.recordedAt ? new Date(record.recordedAt).getTime() : NaN;
+          record.values.filter(entry => entry.parameterId === option.id).forEach(entry => {
+            if (entry.value == null || (typeof entry.value === "string" && !entry.value.trim())) return;
+            const value = Number(entry.value);
+            if (Number.isFinite(value) && Number.isFinite(time)) points.push({ t: time, v: value });
+          });
+        });
+        return { ...option, points };
+      });
+      const hasReadings = datasets.some(item => item.points.length);
+      message.textContent = chosen.length ? (hasReadings ? "" : "No valid recorded values are available for the selected parameters.") : "Select lab parameters to compare their recorded trends.";
+      charts.innerHTML = datasets.map((item, index) => `<section class="card chart-card compare-chart"><h2>${htmlEscape(item.label)}</h2><p class="rx-hint">${item.points.length ? `${item.points.length} recorded ${item.points.length === 1 ? "reading" : "readings"}` : "No valid recorded readings"}</p><div data-compare-chart="${index}"></div></section>`).join("");
+      datasets.forEach((item, index) => {
+        const parameter = state.parameters.find(candidate => candidate.id === item.id);
+        renderLineChart(charts.querySelector(`[data-compare-chart="${index}"]`), {
+          series: [{ name: `${parameter.name}${parameter.unit ? ` (${parameter.unit})` : ""}`, color: CHART_COLORS[index % CHART_COLORS.length], axis: "left", points: item.points }],
+          leftLabel: parameter.unit || "", recordedDatesOnly: true, fixedLeftAxis: true
+        });
+      });
+    };
+
+    const render = () => {
+      const recorded = new Set(state.labResults.filter(record => record.patientId === patientKey()).flatMap(record => record.values.map(entry => entry.parameterId)));
+      options = state.parameters.filter(parameter => recorded.has(parameter.id)).map(parameter => ({
+        id: parameter.id, label: `${state.tests.find(test => test.id === parameter.testId)?.name || "Unlinked"} — ${parameter.name}`
+      })).sort((a, b) => a.label.localeCompare(b.label));
+      selected = new Set([...selected].filter(id => options.some(option => option.id === id)));
+      renderChoices();
+      renderCharts();
+    };
+    const refresh = () => {
+      const saved = window.localStorage.getItem(STORE_KEY);
+      const user = window.localStorage.getItem(USER_KEY);
+      if (saved === currentState && user === currentUser) return;
+      if (user !== currentUser) selected.clear();
+      state = loadState();
+      currentState = saved;
+      currentUser = user;
+      render();
+    };
+    search.addEventListener("input", renderChoices);
+    choices.addEventListener("change", event => {
+      if (event.target.type !== "checkbox") return;
+      if (event.target.checked) selected.add(event.target.value);
+      else selected.delete(event.target.value);
+      document.querySelector("[data-compare-count]").textContent = `${selected.size} selected`;
+      renderCharts();
+    });
+    document.querySelector("[data-compare-clear]").addEventListener("click", () => { selected.clear(); renderChoices(); renderCharts(); });
+    window.addEventListener("storage", event => { if (event.key === STORE_KEY || event.key === USER_KEY || event.key === null) refresh(); });
+    window.addEventListener("pageshow", refresh);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+    render();
   }
 
   // ---- Abnormal results ----
@@ -2763,8 +3890,10 @@
 
   function init() {
     state = loadState();
+    if (!migratePrescriptions()) return;
     const page = document.body.dataset.page;
     if (page === "analytics") initAnalytics();
+    if (page === "advanced-analytics") initAdvancedAnalytics();
     if (page === "abnormal") initAbnormal();
     if (page === "home") {
       renderSiteHeader();
@@ -2784,6 +3913,9 @@
       syncGenderField();
     }
     if (page === "dashboard") initDashboard();
+    if (page === "opening-stock") initOpeningStock();
+    if (page === "receipts") initReceipts();
+    if (page === "safety-stock") initSafetyStock();
     if (page === "vitals") initVitals();
     if (page === "labtests") initLabTests();
     if (page === "groups") {
@@ -2795,7 +3927,8 @@
     if (page === "symptoms") initSymptoms();
     if (page === "practitioners") initPractitioners();
     if (page === "prescriptions") initPrescriptions();
-    if (page === "interventions") initInterventions();
+    if (page === "interventions") initInterventionReports();
+    if (page === "inpatient") initInpatient();
     if (page === "tests") {
       renderAppHeader(page);
       renderTests("");
@@ -2830,6 +3963,7 @@
     document.querySelector("[data-record-search]")?.addEventListener("input", renderGroups);
     document.querySelector("[data-status-filter]")?.addEventListener("change", renderGroups);
     document.querySelector("[data-category-select]")?.addEventListener("change", renderGroups);
+    document.querySelector("[data-test-subgroup-filter]")?.addEventListener("change", renderGroups);
     document.querySelector("[data-test-search]")?.addEventListener("input", event => renderTests(event.target.value));
     document.querySelector('[name="password"]')?.closest(".password-wrap")?.querySelector(".password-toggle")?.addEventListener("click", event => {
       const input = document.querySelector('[name="password"]');

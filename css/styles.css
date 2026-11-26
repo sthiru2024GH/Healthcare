@@ -302,6 +302,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .rx-section-head h3 span { color: #94a3b8; font-weight: 600; font-size: 11px; }
 .rx-section > .button { justify-self: start; }
 .rx-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; margin-bottom: 8px; }
+.iv-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+@media (max-width: 640px) { .iv-row { grid-template-columns: 1fr; } }
+.report-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; }
+.report-observation, .report-narrative { display: grid; gap: 10px; padding: 14px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 10px; background: #f8fafc; }
+.report-template-action { align-self: end; }
+.report-observation .button, .report-narrative .button { justify-self: start; }
+body[data-page="interventions"] .details-list dd { white-space: pre-wrap; }
+body[data-page="inpatient"] .details-list dd { white-space: pre-wrap; }
+@media (max-width: 640px) { .report-grid { grid-template-columns: 1fr; } }
 .rx-med { display: grid; gap: 10px; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; }
 .rx-med-main { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
 .rx-timings { display: flex; flex-wrap: wrap; gap: 6px 16px; }
@@ -367,6 +376,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .data-table td { height: 55px; padding: 0 12px; border-top: 1px solid #f1f5f9; color: #475569; font: 10px var(--font-data); }
 .data-table td:first-child { color: var(--navy); font-weight: 600; }
 .data-table .record-id { color: #94a3b8; font-size: 9px; }
+.data-table .stock-group-heading th { height: auto; padding: 10px 12px; border-top: 1px solid #b9ded8; background: #eaf6f3; color: #00685f; font-size: 10px; letter-spacing: 0; white-space: normal; }
 .table-actions { display: flex; align-items: center; gap: 4px; }
 .table-action { min-width: 28px; min-height: 25px; padding: 0 6px; border: 1px solid var(--border); border-radius: 5px; background: white; color: #64748b; font: 600 8px var(--font-data); cursor: pointer; }
 .table-action:hover { border-color: #9bd8d0; color: var(--primary-hover); }
@@ -394,13 +404,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .tab-strip a.is-current { text-decoration: underline; text-underline-offset: 6px; }
 .med-card { padding: 24px; margin-bottom: 18px; }
 .med-card h2 { margin: 0 0 16px; font-size: 15px; }
-.med-scroll { display: grid; gap: 12px; max-height: 420px; overflow-y: auto; padding-right: 6px; }
+.med-practice-columns { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(300px, 1fr); gap: 14px; overflow-x: auto; padding-bottom: 4px; }
+.med-practice-column { min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #f8fafc; }
+.med-practice-column h3 { margin: 0 0 10px; color: var(--primary); font-size: 13px; overflow-wrap: anywhere; }
+.med-practice-list { display: grid; align-content: start; gap: 10px; max-height: 420px; overflow-y: auto; padding-right: 4px; }
+.med-practice-empty { margin: 6px 0; color: #64748b; font-size: 11px; }
 .med-item { padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: #fcfcfd; font-size: 12px; }
 .med-name b { font-weight: 700; }
+.med-practitioner { margin-top: 3px; color: #64748b; font-size: 10px; }
 .med-time { margin-top: 3px; color: #4f5bd5; font-weight: 700; }
 .med-meal { margin-top: 2px; color: #94a3b8; font-size: 10px; }
-.med-actions { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
-.med-actions input { min-height: 32px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 11px; }
+.med-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.med-actions input { max-width: 100%; min-height: 32px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 11px; }
 .med-take { padding: 6px 12px; border: 0; border-radius: 999px; background: #63c5ef; color: white; font: 700 11px var(--font-data); cursor: pointer; }
 .med-take:hover { background: #42b2e3; }
 .med-log-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
@@ -408,7 +423,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .log-date { display: flex; align-items: center; gap: 10px; color: #64748b; font-size: 11px; }
 .log-date label { display: flex; align-items: center; gap: 8px; }
 .log-date input { min-height: 34px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 11px; }
-.log-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+.log-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 12px; overflow-wrap: anywhere; }
 .log-row small { display: block; margin-top: 2px; color: #94a3b8; font-size: 10px; }
 .vital-top { display: flex; justify-content: flex-end; margin-bottom: 14px; }
 .vital-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 18px; }
@@ -441,6 +456,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .record-field { display: grid; gap: 6px; color: #334155; font-size: 10px; font-weight: 600; }
 .record-field.full-width { grid-column: 1 / -1; }
 .record-field input, .record-field select { min-height: 39px; font-size: 11px; }
+.record-field .symptom-option input { width: auto; min-height: 0; padding: 0; }
+.record-field details summary { cursor: pointer; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: #fff; font-size: 11px; }
 .record-field textarea { min-height: 74px; padding: 9px 11px; resize: vertical; font-size: 11px; }
 .dialog-actions { display: flex; justify-content: end; gap: 8px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #f1f5f9; }
 .dialog-actions .button { min-height: 37px; font-size: 11px; }
@@ -717,14 +734,28 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .chart-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
 .chart-head h2 { margin: 0; font-size: 15px; }
 .chart-head select { max-width: 320px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font: 500 12px var(--font-data); background: #fff; }
+.chart-controls { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; min-width: 0; }
+.chart-controls input { width: 200px; max-width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font: 500 12px var(--font-data); background: #fff; }
+@media (max-width: 640px) { .chart-head { flex-wrap: wrap; } .chart-controls { justify-content: flex-start; width: 100%; } .chart-head select { max-width: 100%; } }
 .chart-svg { width: 100%; height: auto; display: block; }
 .chart-scroll { overflow-x: auto; }
+.chart-with-fixed-axis { display: flex; }
+.chart-with-fixed-axis .chart-scroll { flex: 1 1 auto; min-width: 0; }
+.chart-fixed-axis { display: block; flex: 0 0 90px; width: 90px; height: 365px; }
 .chart-grid { stroke: #e5e7eb; stroke-width: 1; }
 .chart-axis { stroke: #cbd5e1; stroke-width: 1; }
 .chart-tick { fill: #64748b; font: 500 10px var(--font-data); }
 .chart-axis-label { fill: #64748b; font: 500 10px var(--font-data); }
 .chart-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; margin: 4px 0; font: 500 11px var(--font-data); color: #475569; }
 .chart-key i { display: inline-block; width: 26px; height: 10px; margin-right: 6px; border-radius: 2px; vertical-align: middle; }
+.compare-choice-head { display: flex; justify-content: space-between; gap: 12px; margin-top: 16px; color: #64748b; font-size: 11px; }
+.compare-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; max-height: 210px; overflow-y: auto; margin-top: 8px; }
+.compare-choice { display: flex; align-items: flex-start; gap: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 7px; color: #334155; font-size: 11px; overflow-wrap: anywhere; }
+.compare-choice input { flex: 0 0 auto; }
+.compare-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.compare-chart { min-width: 0; margin-bottom: 0; }
+.compare-chart h2 { margin: 0; font-size: 14px; }
+@media (max-width: 820px) { .compare-grid { grid-template-columns: minmax(0, 1fr); } }
 
 .abn-tabs { display: flex; gap: 10px; margin: 4px 0 16px; }
 .abn-tab { padding: 9px 18px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: #1f2937; font: 600 12px var(--font-data); cursor: pointer; }

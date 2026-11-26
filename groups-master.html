@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=21">
-  <script src="js/app.js?v=21" defer></script>
+  <link rel="stylesheet" href="css/styles.css?v=31">
+  <script src="js/app.js?v=46" defer></script>
 </head>
 <body data-page="groups">
   <header class="app-header" data-app-header></header>
@@ -21,7 +21,7 @@
     <section class="card directory-card">
       <div class="directory-heading"><div><h2>Canonical directories</h2><p>Select a directory to review and manage its records.</p></div></div>
       <div class="directory-tabs" role="tablist" aria-label="Master data groups" data-directory-tabs></div>
-      <div class="table-toolbar"><div class="search-wrap"><span aria-hidden="true">⌕</span><input type="search" data-record-search placeholder="Search records..." aria-label="Search records"></div><label class="select-filter"><span class="sr-only">Filter by status</span><select data-status-filter><option value="all">All statuses</option><option value="active">Active</option><option value="draft">Draft</option><option value="staged">Staged</option></select></label><label class="select-filter" data-category-filter hidden><span class="sr-only">Filter by test category</span><select data-category-select aria-label="Filter by test category"><option value="">All test categories</option></select></label><span class="record-count" data-record-count>0 records</span></div>
+      <div class="table-toolbar"><div class="search-wrap"><span aria-hidden="true">⌕</span><input type="search" data-record-search placeholder="Search records..." aria-label="Search records"></div><label class="select-filter"><span class="sr-only">Filter by status</span><select data-status-filter><option value="all">All statuses</option><option value="active">Active</option><option value="draft">Draft</option><option value="staged">Staged</option></select></label><label class="select-filter" data-test-subgroup-wrap hidden><span class="sr-only">Filter by test subgroup</span><select data-test-subgroup-filter aria-label="Filter by test subgroup"><option value="all">All test subgroups</option><option value="Clinical">Clinical</option><option value="Interventional">Interventional</option></select></label><label class="select-filter" data-category-filter hidden><span class="sr-only">Filter by test category</span><select data-category-select aria-label="Filter by test category"><option value="">All test categories</option></select></label><span class="record-count" data-record-count>0 records</span></div>
       <div class="data-table-wrap"><table class="data-table"><thead data-table-head></thead><tbody data-table-body></tbody></table><div class="empty-state" data-empty-state hidden><span>⌕</span><b>No matching records</b><p>Try a different search or add a new record.</p></div></div>
       <div class="table-foot"><span>Showing demo records · Changes are saved in this browser</span><span class="table-foot-integrity"><span class="live-dot"></span> Referential links checked</span></div>
     </section>

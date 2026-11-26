@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>Advanced Analytics | MediPulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=30">
+  <script src="js/app.js?v=46" defer></script>
+</head>
+<body data-page="advanced-analytics">
+  <header class="app-header" data-app-header></header>
+  <main class="workspace-main master-main">
+    <div class="page-title-row"><div><span class="eyebrow">PATIENT HOME</span><h1>Advanced Analytics</h1></div></div>
+    <nav class="tab-strip" aria-label="Health sections"><a href="symptoms.html">Symptoms</a><a href="prescriptions.html">Prescriptions</a><a href="dashboard.html">Medications</a><a href="interventions.html">Interventions</a><a href="vitals.html">Vitals</a><a href="labtests.html">Lab Tests</a><a href="analytics.html">Analytics</a><a href="advanced-analytics.html" class="is-current">Advanced Analytics</a></nav>
+    <section class="card chart-card">
+      <div class="chart-head"><h2>Compare lab parameters</h2><button class="button button-secondary button-compact" type="button" data-compare-clear>Clear selection</button></div>
+      <p class="rx-hint">Search and select recorded lab parameters. Your selection remains active when you search for another parameter.</p>
+      <label class="form-field">Search tests or parameters<input type="search" data-compare-search placeholder="e.g. hemoglobin or creatinine"></label>
+      <div class="compare-choice-head"><b>Recorded parameters</b><span data-compare-count aria-live="polite"></span></div>
+      <div class="compare-choices" data-compare-choices></div>
+    </section>
+    <p class="rx-hint" data-compare-message aria-live="polite"></p>
+    <div class="compare-grid" data-compare-charts></div>
+    <p class="prototype-callout"><b>Reading the charts:</b> Each parameter uses its own vertical scale based on its readings, and its own unit. The scale remains visible while you scroll; reference ranges are not shown here. As in Lab Test Trend, each chart shows only that parameter's recorded dates, equally spaced even when the time between tests differs. Dates and scroll positions may differ between charts; check the date labels when comparing them. Lines connect recorded readings rather than showing measurements between them. Different slopes do not establish a relationship or cause. Review results with a practitioner. Prototype only; not for clinical use.</p>
+  </main>
+  <footer class="app-footer"><span>© 2026 MediPulse · Demonstration prototype</span><span>Sample data only · Not for clinical use</span></footer>
+  <div class="toast-region" aria-live="polite"></div>
+</body>
+</html>

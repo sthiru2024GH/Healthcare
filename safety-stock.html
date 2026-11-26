@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>Safety Stock | MediPulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=27">
+  <script src="js/app.js?v=46" defer></script>
+</head>
+<body data-page="safety-stock">
+  <header class="app-header" data-app-header></header>
+  <main class="workspace-main master-main">
+    <div class="breadcrumb"><a href="dashboard.html">Workspace</a><span>/</span><span>Reports</span><span>/</span><span>Stocks</span></div>
+    <div class="page-title-row"><div><span class="eyebrow">STOCK REPORT</span><h1>Safety stock</h1><p>Planning information for the logged-in patient.</p></div></div>
+    <section class="card directory-card">
+      <div class="directory-heading"><div><h2>Safety stock and suggested orders</h2><p>Grouped by practice type from current prescriptions. Medicines shared across practice types appear once in a shared group; their doses are added together.</p></div></div>
+      <div class="data-table-wrap">
+        <table class="data-table"><thead><tr><th>DRUG NAME</th><th>DOSAGE / DAY</th><th>ESTIMATED STOCK</th><th>CALCULATED REORDER THRESHOLD</th><th>COMPLETE DAYS OF STOCK</th><th>LEAD TIME</th><th>SYSTEM LEAD TIME</th><th>SAFETY STOCK (1 DAY)</th><th>LEAD-TIME DEMAND</th><th>ENTERED REORDER LEVEL</th><th>STATUS</th></tr></thead><tbody data-safety-body></tbody></table>
+        <div class="empty-state" data-safety-empty hidden><span>♡</span><b>No opening stock recorded yet</b><p>Add an opening stock entry to see its planning details.</p></div>
+      </div>
+    </section>
+    <section class="card directory-card">
+      <div class="directory-heading"><div><h2>Suggested order list</h2><p>Grouped in the same way as the report. Items at or below the calculated threshold are rounded up to whole order units.</p></div></div>
+      <div class="data-table-wrap"><table class="data-table"><thead><tr><th>DRUG NAME</th><th>STATUS</th><th>SUGGESTED ORDER</th><th>EQUIVALENT CONSUMPTION UNITS</th></tr></thead><tbody data-order-body></tbody></table>
+        <div class="empty-state" data-order-empty hidden><b>No calculable order suggestions</b><p>Check the status above for items with unavailable data.</p></div>
+      </div>
+    </section>
+    <p class="prototype-callout"><b>Calculation:</b> Estimated stock is opening stock at the start of its date, plus recorded receipts converted to consumption units, less logged quantities taken from that date onward. Same-day receipts are added; do not include them in the opening count. Complete days of stock is estimated stock divided by daily dosage, rounded down; it is unavailable when the estimate is negative or the inputs are unavailable. The reorder threshold is daily dosage × (lead time + one day); the separately entered reorder level is not used. Suggested orders target 30 days of supply after delivery: 30-day demand plus lead-time demand, less estimated stock, rounded up to whole order units.</p>
+    <p class="prototype-callout"><b>Limitations:</b> Estimates exclude unrecorded receipts and purchases, adjustments and unlogged consumption; repeated suggestions do not account for outstanding orders. A negative balance indicates a discrepancy and should be checked. Older logs without a recorded quantity and unit make the estimate unavailable; edit the log only if the actual dose is known. System lead time requires linked order and receipt history. Medicines are matched by name, not formulation or strength; doses from different practitioners are summed. Items without a current prescription are grouped separately. Verify prescriptions and physical stock. Prototype only; not for clinical use.</p>
+    <p class="prototype-callout"><a href="opening-stock.html">Go to opening stock</a> · <a href="receipts.html">Go to receipts</a></p>
+  </main>
+  <footer class="app-footer"><span>© 2026 MediPulse · Demonstration prototype</span><span>Sample data only · Not for clinical use</span></footer>
+  <div class="toast-region" aria-live="polite"></div>
+</body>
+</html>

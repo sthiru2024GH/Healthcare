@@ -9,7 +9,7 @@
 
 ## 1. Executive Overview & System Topology
 
-MediPulse is a patient-centered clinical web operating system for outpatient healthcare delivery, tele-consultations, and relational clinical master data management (MDM). The landing experience keeps the patient's health and care team at its center. The intended product uses role-aware access; in the current demonstration, Patient profiles may add, edit, and soft-delete master records while all other profiles are view-only.
+MediPulse is a patient-centered clinical web operating system for outpatient healthcare delivery, tele-consultations, and relational clinical master data management (MDM). The landing experience keeps the patient's health and care team at its center. The intended product uses role-aware access; in the current demonstration, Patient profiles may add, edit, and delete master records while all other profiles are view-only.
 
 ```
 D:\Healthcare\
@@ -38,7 +38,7 @@ D:\Healthcare\
 
 **Patient-first model.** The Patient records all event data; other roles are View-only. Care-giver entry, Admin approval, email verification, Forgot password and captcha are planned.
 
-**Screens built:** Landing, Login/Sign-up (Patients give Gender and Date of birth), My Dashboard (medication schedule showing period of day and meal dependency only, plus Medication Log), Symptoms, Prescriptions, Interventions, Vitals, Lab Tests, Practitioners, Groups Master, Tests & Parameters Studio. Analytics, Advanced Analytics and Reports are not yet built.
+**Screens built:** Landing, Login/Sign-up (Patients give Gender and Date of birth), My Dashboard (medication schedule showing period of day and meal dependency only, plus Medication Log), Abnormal Results, Symptoms, Prescriptions, Interventions, In-Patient Admissions, Vitals, Lab Tests, Analytics (vital and lab trends), Advanced Analytics (multi-parameter lab comparisons), Opening Stock, Receipts, Safety Stock, Practitioners, Groups Master, and Tests & Parameters Studio. A patient timeline and additional reports are not yet built.
 
 **Group masters (14):** Practice type, Specialization, User profile, Facility type, Facilities, Tests, Health parameters, Limit bands, Vital categories, Vitals, Symptoms, Symptom diagnostic tests, Intervention method, Practitioners.
 
@@ -55,6 +55,9 @@ D:\Healthcare\
 | `labResults` | patient, facilityId, testId, recordedAt, requestedBy (`SELF` or practitioner), prescriptionId, values[{parameterId, value}] |
 | `limitBands` | parameterId (a health parameter or vital), name, sex, ageFrom, ageTo, lower, upper, severity, status |
 | `facilities` | facility type, name (required), address |
+| `ipdEncounters` | patient, facility, optional practitioner, admission and discharge dates/times, diagnosis, stay details and status |
+| `openingStocks` | patient, medicine, opening quantity/date, consumption and order units, conversion, reorder level and lead time |
+| `stockReceipts` | patient, opening-stock medicine, receipt date/time, quantity, and snapshots of receipt-unit conversion |
 
 **Referential rules.**
 - *Master lock:* a master record in use cannot be edited or deleted until the detail records using its key are removed (Facility, Test, Parameter, Vital, Practitioner, Facility type, Prescription and diagnosis links).
@@ -64,9 +67,13 @@ D:\Healthcare\
 
 **Limit bands (answers the staggered-range question).** The staggered tier model in section 5 is implemented as optional child rows in `limitBands`, one row per tier, attached to a parameter or vital. Matching is by value (lower inclusive, upper exclusive), sex, and age derived from the patient's Date of birth. The first active match is shown as a coloured badge (Normal green, Borderline amber, Abnormal orange, Critical red) in the Vitals and Lab Tests forms and lists. The free-text limit columns from the CSVs are display-only and are not parsed.
 
+**Inventory and reporting.** Opening stock, unlinked medicine receipts, safety-stock estimates, abnormal results, vital and lab trends, and multi-parameter lab comparisons are implemented in the prototype. Stock estimates use entered records and medication logs; they are not a physical inventory ledger or clinical recommendation. See `README.md` for the calculation rules and limitations.
+
 ---
 
-## 2. Complete Screen Suite & Interface Blueprints
+## 2. Interface Blueprints
+
+The following table records earlier design concepts. The implemented screen inventory and behavior are documented in section 1a and `README.md`; those sources are authoritative when they differ from these blueprints.
 
 | Screen Filename | Title / Purpose | Core Components & User Actions |
 | :--- | :--- | :--- |

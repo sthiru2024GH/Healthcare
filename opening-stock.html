@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>Opening Stock | MediPulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=25">
+  <script src="js/app.js?v=46" defer></script>
+</head>
+<body data-page="opening-stock">
+  <header class="app-header" data-app-header></header>
+  <main class="workspace-main master-main">
+    <div class="page-title-row"><div><span class="eyebrow">PATIENT HOME</span><h1>My Dashboard</h1></div></div>
+    <nav class="tab-strip" aria-label="Health sections"><a href="symptoms.html">Symptoms</a><a href="prescriptions.html">Prescriptions</a><a href="dashboard.html" class="is-current">Medications</a><a href="interventions.html">Interventions</a><a href="vitals.html">Vitals</a><a href="labtests.html">Lab Tests</a><a href="analytics.html">Analytics</a><a href="advanced-analytics.html">Advanced Analytics</a></nav>
+    <nav class="tab-strip" aria-label="Medication sections"><a href="dashboard.html">Schedule and log</a><a href="opening-stock.html" class="is-current">Opening stock</a><a href="receipts.html">Receipts</a></nav>
+    <label class="form-field">Filter by practice type<select data-stock-practice-filter><option value="">All practice types</option></select></label>
+    <p class="rx-hint">The filter applies to the medicine list and saved entries. Shared medicines appear under each matching type. Older entries without a matching current prescription appear under All. Finish or cancel editing to change the filter.</p>
+    <p class="master-access-note" data-stock-access hidden>View-only access. Only Patient profiles can change opening stock.</p>
+    <section class="card symptom-card" data-stock-form-card>
+      <h2 data-stock-heading>Add opening stock</h2>
+      <p class="rx-hint">Choose a medicine from your latest open prescription for each practitioner. Repeated drug names appear once; enter the physical quantity at the start of the opening date in its prescribed consumption unit. Medication logged on that date will be deducted in the stock report.</p>
+      <form class="symptom-form" data-stock-form novalidate>
+        <label class="form-field">Prescribed medicine<select name="medicationId" required></select></label>
+        <p class="rx-hint" data-stock-prescription></p>
+        <div class="symptom-row">
+          <label class="form-field">Opening stock date<input type="date" name="openingDate" required></label>
+          <label class="form-field">Opening quantity (consumption units)<input type="number" name="quantity" min="0" step="any" required></label>
+        </div>
+        <div class="symptom-row">
+          <label class="form-field">Order / receipt unit<input name="orderUnit" maxlength="30" placeholder="e.g. strip" required></label>
+          <label class="form-field">Consumption units per order unit<input type="number" name="conversion" min="0" step="any" placeholder="e.g. 10 tablets per strip" required></label>
+        </div>
+        <div class="symptom-row">
+          <label class="form-field">Reorder level (consumption units)<input type="number" name="reorderLevel" min="0" step="any" required></label>
+          <label class="form-field">Lead time (days)<input type="number" name="leadTimeDays" min="0" step="1" required></label>
+        </div>
+        <p class="form-error" data-stock-error role="alert" hidden></p>
+        <div class="symptom-actions"><button type="button" class="button button-secondary" data-stock-cancel hidden>Cancel</button><button type="submit" class="button button-primary" data-stock-submit>Save opening stock</button></div>
+      </form>
+    </section>
+    <section class="card directory-card">
+      <div class="directory-heading"><div><h2>Opening stock entries</h2><p>Opening balances only; not a current stock calculation.</p></div><span class="record-count" data-stock-count></span></div>
+      <div class="data-table-wrap"><table class="data-table"><thead><tr><th>DATE</th><th>MEDICINE</th><th>PRACTITIONER</th><th>OPENING QUANTITY</th><th>ORDER UNIT</th><th>CONVERSION</th><th>REORDER LEVEL</th><th>LEAD TIME</th><th>ACTIONS</th></tr></thead><tbody data-stock-body></tbody></table><div class="empty-state" data-stock-empty hidden><span>♡</span><b>No opening stock entries match this filter</b></div></div>
+    </section>
+    <p class="prototype-callout"><b>Prototype note:</b> Opening stock is stored in this browser only. The safety stock report estimates the balance by adding recorded receipts and deducting logged doses. Unrecorded transactions and adjustments are not included. Verify physical stock. Not for clinical use.</p>
+  </main>
+  <footer class="app-footer"><span>© 2026 MediPulse · Demonstration prototype</span><span>Sample data only · Not for clinical use</span></footer>
+  <div class="toast-region" aria-live="polite"></div>
+</body>
+</html>

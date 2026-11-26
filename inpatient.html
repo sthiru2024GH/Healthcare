@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>In-Patient Admissions | MediPulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=34">
+  <script src="js/app.js?v=46" defer></script>
+</head>
+<body data-page="inpatient">
+  <header class="app-header" data-app-header></header>
+  <main class="workspace-main master-main">
+    <div class="breadcrumb"><a href="dashboard.html">Workspace</a><span>/</span><span>Events</span><span>/</span><span>In-Patient</span></div>
+    <div class="page-title-row"><div><span class="eyebrow">HEALTH EVENTS</span><h1>In-Patient Admissions</h1><p>Record each hospital stay, from admission through discharge.</p></div></div>
+    <p class="master-access-note" data-ipd-access hidden>View-only access. Only Patient profiles can add, edit or delete records.</p>
+    <section class="card symptom-card" data-ipd-form-card hidden>
+      <h2 data-ipd-heading>Add admission</h2>
+      <form class="symptom-form" data-ipd-form novalidate>
+        <p class="form-error" data-ipd-error role="alert" tabindex="-1" hidden></p>
+        <section class="rx-section">
+          <div class="rx-section-head"><h3>Admission details</h3></div>
+          <div class="report-grid">
+            <label class="form-field">Hospital / facility <span>(required)</span><select name="facilityId"></select></label>
+            <label class="form-field">Primary practitioner (if known)<select name="practitionerId"></select></label>
+            <label class="form-field">Admission date <span>(required)</span><input type="date" name="admissionDate"></label>
+            <label class="form-field">Admission time (optional)<input type="time" name="admissionTime" step="any"></label>
+            <label class="form-field">Admission type<select name="admissionType"><option value="">Not recorded</option><option>Emergency</option><option>Elective</option><option>Transfer</option><option>Urgent</option><option>Other</option></select></label>
+            <label class="form-field">Admission source<select name="admissionSource"><option value="">Not recorded</option><option>OPD</option><option>Emergency Room</option><option>External Referral</option><option>Other</option></select></label>
+            <label class="form-field">Admitting diagnosis<input name="admittingDiagnosis" maxlength="250"></label>
+            <label class="form-field">Admitting diagnosis ICD-10 code (if known)<input name="admittingCode" maxlength="80"></label>
+            <label class="form-field">Ward<input name="ward" maxlength="120"></label>
+            <label class="form-field">Room number<input name="room" maxlength="120"></label>
+            <label class="form-field">Bed<input name="bed" maxlength="120"></label>
+            <label class="form-field">Status<select name="status"><option>Admitted</option><option>Discharge Initiated</option><option>Discharged</option></select></label>
+          </div>
+          <label class="form-field">Chief complaint<textarea name="chiefComplaint" rows="2"></textarea></label>
+          <p class="rx-hint">Choose from <a href="groups-master.html?group=facilities">Facilities</a> and <a href="groups-master.html?group=practitioners">Practitioners</a> in Groups master. Ward, room and bed are entered as reported; ICD-10 codes are not automatically validated.</p>
+        </section>
+        <section class="rx-section">
+          <div class="rx-section-head"><h3>Discharge details <span>(complete when known)</span></h3></div>
+          <div class="report-grid">
+            <label class="form-field">Discharge date<input type="date" name="dischargeDate"></label>
+            <label class="form-field">Discharge time (optional)<input type="time" name="dischargeTime" step="any"></label>
+            <label class="form-field">Discharge disposition<select name="disposition"><option value="">Not recorded</option><option>Home</option><option>Home with Care</option><option>Transferred to Another Facility</option><option>LAMA - Left Against Medical Advice</option><option>Deceased</option><option>Other</option></select></label>
+            <label class="form-field">Final diagnosis<input name="finalDiagnosis" maxlength="250"></label>
+            <label class="form-field">Final diagnosis ICD-10 code (if known)<input name="finalCode" maxlength="80"></label>
+          </div>
+          <label class="form-field">Discharge summary<textarea name="dischargeSummary" rows="4"></textarea></label>
+          <label class="form-field">Follow-up instructions<textarea name="followUp" rows="3"></textarea></label>
+          <p class="rx-hint">A discharge date and disposition are required when status is Discharged. Dates cannot be in the future; times are optional.</p>
+        </section>
+        <div class="symptom-actions"><button type="button" class="button button-secondary" data-ipd-cancel hidden>Cancel edit</button><button type="submit" class="button button-primary" data-ipd-submit>Save admission</button></div>
+      </form>
+    </section>
+    <section class="card directory-card">
+      <div class="directory-heading"><div><h2>Admission history</h2><p>Most recent admission first. Each hospital stay is a separate record.</p></div><span class="record-count" data-ipd-count></span></div>
+      <div class="data-table-wrap"><table class="data-table"><thead><tr><th>FACILITY</th><th>ADMITTED</th><th>DISCHARGED</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody data-ipd-body></tbody></table><div class="empty-state" data-ipd-empty hidden><span>♡</span><b>No admissions recorded yet</b></div></div>
+      <div class="table-foot"><span>Saved in this browser only</span></div>
+    </section>
+    <p class="prototype-callout"><b>Prototype note:</b> Sample data only; not for clinical use. Inpatient sub-events, cross-hospital links and a complete stay summary will be added later.</p>
+  </main>
+  <footer class="app-footer"><span>© 2026 MediPulse · Demonstration prototype</span><span>Sample data only · Not for clinical use</span></footer>
+  <div class="toast-region" aria-live="polite"></div>
+</body>
+</html>

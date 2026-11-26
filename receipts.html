@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <title>Receipts | MediPulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=27">
+  <script src="js/app.js?v=46" defer></script>
+</head>
+<body data-page="receipts">
+  <header class="app-header" data-app-header></header>
+  <main class="workspace-main master-main">
+    <div class="page-title-row"><div><span class="eyebrow">PATIENT HOME</span><h1>My Dashboard</h1></div></div>
+    <nav class="tab-strip" aria-label="Health sections"><a href="symptoms.html">Symptoms</a><a href="prescriptions.html">Prescriptions</a><a href="dashboard.html" class="is-current">Medications</a><a href="interventions.html">Interventions</a><a href="vitals.html">Vitals</a><a href="labtests.html">Lab Tests</a><a href="analytics.html">Analytics</a><a href="advanced-analytics.html">Advanced Analytics</a></nav>
+    <nav class="tab-strip" aria-label="Medication sections"><a href="dashboard.html">Schedule and log</a><a href="opening-stock.html">Opening stock</a><a href="receipts.html" class="is-current">Receipts</a></nav>
+    <label class="form-field">Filter by practice type<select data-stock-practice-filter><option value="">All practice types</option></select></label>
+    <p class="rx-hint">The filter applies to the medicine list and saved receipts. Shared medicines appear under each matching type. Older receipts without a matching current prescription appear under All. Finish or cancel editing to change the filter.</p>
+    <p class="master-access-note" data-receipt-access hidden>View-only access. Only Patient profiles can change receipts.</p>
+    <section class="card symptom-card" data-receipt-form-card>
+      <h2 data-receipt-heading>Add receipt</h2>
+      <p class="rx-hint">Record a purchase or delivery without an order. Choose an existing opening stock entry; the receiving unit and conversion come from that entry. A receipt on the opening date is added to the start-of-day balance.</p>
+      <form class="symptom-form" data-receipt-form novalidate>
+        <label class="form-field">Medicine<select name="openingStockId" required></select></label>
+        <p class="rx-hint" data-receipt-unit></p>
+        <div class="symptom-row">
+          <label class="form-field">Vendor<input name="vendor" maxlength="100" required></label>
+          <label class="form-field">Date and time received<input type="datetime-local" name="receivedAt" required></label>
+        </div>
+        <label class="form-field">Quantity received (receiving units)<input type="number" name="quantity" min="0" step="any" required></label>
+        <p class="form-error" data-receipt-error role="alert" hidden></p>
+        <div class="symptom-actions"><button type="button" class="button button-secondary" data-receipt-cancel hidden>Cancel</button><button type="submit" class="button button-primary" data-receipt-submit>Save receipt</button></div>
+      </form>
+    </section>
+    <section class="card directory-card">
+      <div class="directory-heading"><div><h2>Receipts</h2><p>All receipts shown here are without a linked order.</p></div><span class="record-count" data-receipt-count></span></div>
+      <div class="data-table-wrap"><table class="data-table"><thead><tr><th>RECEIVED</th><th>VENDOR</th><th>MEDICINE</th><th>QUANTITY RECEIVED</th><th>CONSUMPTION QUANTITY</th><th>ACTIONS</th></tr></thead><tbody data-receipt-body></tbody></table><div class="empty-state" data-receipt-empty hidden><span>♡</span><b>No receipts match this filter</b></div></div>
+    </section>
+    <p class="prototype-callout"><b>Prototype note:</b> Receipts are stored in this browser only. Orders and linked receipts are not yet implemented. Check your physical stock; the report excludes unrecorded transactions. Not for clinical use.</p>
+  </main>
+  <footer class="app-footer"><span>© 2026 MediPulse · Demonstration prototype</span><span>Sample data only · Not for clinical use</span></footer>
+  <div class="toast-region" aria-live="polite"></div>
+</body>
+</html>

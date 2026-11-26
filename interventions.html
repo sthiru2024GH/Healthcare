@@ -8,40 +8,64 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=21">
-  <script src="js/app.js?v=21" defer></script>
+  <link rel="stylesheet" href="css/styles.css?v=33">
+  <script src="js/app.js?v=46" defer></script>
 </head>
 <body data-page="interventions">
   <header class="app-header" data-app-header></header>
   <main class="workspace-main master-main">
     <div class="breadcrumb"><a href="dashboard.html">Workspace</a><span>/</span><span>Events</span><span>/</span><span>Interventions</span></div>
-    <div class="page-title-row"><div><span class="eyebrow">HEALTH EVENTS</span><h1>Interventions</h1><p>Record an intervention prescription from a practitioner, with one or more interventions.</p></div></div>
-    <p class="master-access-note" data-iv-access-note hidden>View-only access. Only Patient profiles can record interventions.</p>
-    <section class="card symptom-card" data-iv-form-card hidden>
-      <h2 data-iv-heading>Add Intervention Prescription</h2>
-      <form class="symptom-form" data-iv-form novalidate>
-        <div class="symptom-row">
-          <label class="form-field">Practitioner<select name="practitionerId" required></select></label>
-          <label class="form-field">Date and time<input type="datetime-local" name="issuedAt" required></label>
+    <div class="page-title-row"><div><span class="eyebrow">HEALTH EVENTS</span><h1>Interventions</h1><p>Record diagnostic intervention reports and their findings.</p></div></div>
+    <p class="master-access-note" data-report-access hidden>View-only access. Only Patient profiles can add, edit or delete records.</p>
+    <section class="card symptom-card" data-report-form-card hidden>
+      <h2 data-report-heading>Add intervention report</h2>
+      <form class="symptom-form" data-report-form novalidate>
+        <p class="form-error" data-report-error role="alert" tabindex="-1" hidden></p>
+        <div class="report-grid">
+          <label class="form-field">Prescribed intervention (required)<select name="interventionItemId"></select></label>
+          <label class="form-field">Intervention method<input type="text" data-report-method value="Select a prescribed intervention" readonly></label>
+          <label class="form-field">Prescribing practitioner<input type="text" data-report-prescriber value="Select a prescribed intervention" readonly></label>
+          <label class="form-field">Workflow type<select name="workflow"><option value="">Select workflow...</option><option>Pathology</option><option>Histopathology</option></select></label>
+          <label class="form-field">Facility<select name="facilityId"></select></label>
+          <label class="form-field">Interventionist<select name="interventionistId"></select></label>
+          <label class="form-field">Interpreting specialist<select name="specialistId"></select></label>
+          <label class="form-field">Domain category<input name="domain" maxlength="160" placeholder="e.g. Immunology / Serology"></label>
+          <label class="form-field">Status<select name="status"><option value="">Select status...</option><option>Ordered</option><option>In Progress</option><option>Preliminary</option><option>Final</option><option>Amended</option><option>Cancelled</option></select></label>
+          <label class="form-field">Collection date (if known)<input type="date" name="collectedDate"></label>
+          <label class="form-field">Collection time (optional)<input type="time" name="collectedTime" step="any"></label>
+          <label class="form-field">Reported date (if known)<input type="date" name="reportedDate"></label>
+          <label class="form-field">Reported time (optional)<input type="time" name="reportedTime" step="any"></label>
+          <label class="form-field">Specimen type<input name="specimen" maxlength="120" placeholder="e.g. Serum"></label>
+          <label class="form-field">Specimen site<input name="site" maxlength="160" placeholder="e.g. Kidney"></label>
+          <label class="form-field">Test / procedure standard code<input name="standardCode" maxlength="80"></label>
+          <label class="form-field">Code system<input name="codeSystem" maxlength="80" placeholder="e.g. LOINC or SNOMED CT"></label>
         </div>
-        <p class="rx-hint" data-iv-practitioner-hint hidden>No practitioners yet. <a href="practitioners.html">Add a practitioner</a> first.</p>
-        <label class="form-field">Notes<textarea name="notes" rows="3" maxlength="1000" placeholder="General notes (e.g., reason or instructions)..." required></textarea></label>
-        <div class="rx-section">
-          <div class="rx-section-head"><h3>Interventions <span>(from the Intervention Method master)</span></h3></div>
-          <div data-iv-items></div>
-          <button type="button" class="button button-secondary button-compact" data-iv-add>+ Add intervention</button>
-          <p class="rx-hint">Method not listed? <a href="groups-master.html?group=interventionMethods">Add it to the Intervention Method master</a> first, then pick it here.</p>
-        </div>
-        <p class="form-error" data-iv-error role="alert" hidden></p>
-        <div class="symptom-actions"><button type="button" class="button button-secondary" data-iv-cancel hidden>Cancel</button><button type="submit" class="button button-primary" data-iv-submit>Save prescription</button></div>
+        <p class="rx-hint">A prescribed intervention is required. The method and prescribing practitioner come from the selected prescription. <a href="prescriptions.html">Add a prescription</a> or <a href="groups-master.html?group=facilities">facility</a> if needed. Previously saved test names are retained separately.</p>
+        <p class="rx-hint" data-report-legacy-test hidden></p>
+        <label class="form-field">Clinical indication<textarea name="indication" rows="2"></textarea></label>
+        <label class="form-field">Overall impression / conclusion<textarea name="impression" rows="3"></textarea></label>
+        <section class="rx-section">
+          <div class="rx-section-head"><h3>Observations <span>(separate from Clinical Health Parameters)</span></h3></div>
+          <div class="symptom-row"><label class="form-field">Starter template<select name="starterTemplate" data-report-template><option value="">Choose a template...</option><option value="vasculitis">Vasculitis Panel</option><option value="immunotyping">Capillary Immunotyping</option><option value="biopsy">Kidney Biopsy</option></select></label><div class="report-template-action"><button type="button" class="button button-secondary button-compact" data-report-apply>Append template rows</button></div></div>
+          <p class="rx-hint">Select a template and use Append template rows to add editable starting points. Changing the selection does not replace existing rows. No values are supplied, and unused template rows are not saved.</p>
+          <div data-report-observations></div>
+          <button type="button" class="button button-secondary button-compact" data-report-add-observation>+ Add observation</button>
+        </section>
+        <section class="rx-section">
+          <div class="rx-section-head"><h3>Narrative sections <span>(optional)</span></h3></div>
+          <div data-report-narratives></div>
+          <button type="button" class="button button-secondary button-compact" data-report-add-narrative>+ Add narrative section</button>
+        </section>
+        <p class="rx-hint">Attachments are not available in this prototype. Interventional observations are excluded from Trends.</p>
+        <div class="symptom-actions"><button type="button" class="button button-secondary" data-report-cancel hidden>Cancel edit</button><button type="submit" class="button button-primary" data-report-submit>Save report</button></div>
       </form>
     </section>
     <section class="card directory-card">
-      <div class="directory-heading"><div><h2>Intervention history</h2><p>Most recent first.</p></div><span class="record-count" data-iv-count>0 prescriptions</span></div>
-      <div class="data-table-wrap"><table class="data-table"><thead><tr><th>DATE ISSUED</th><th>PRACTITIONER</th><th>INTERVENTIONS</th><th>NOTES</th><th data-iv-actions-head>ACTIONS</th></tr></thead><tbody data-iv-body></tbody></table><div class="empty-state" data-iv-empty hidden><span>♡</span><b>No interventions recorded yet</b><p>Intervention prescriptions you save will appear here.</p></div></div>
+      <div class="directory-heading"><div><h2>Intervention history</h2><p>Most recent entry first.</p></div><span class="record-count" data-report-count></span></div>
+      <div class="data-table-wrap"><table class="data-table"><thead><tr><th>INTERVENTION</th><th>FACILITY</th><th>COLLECTED</th><th>REPORTED</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody data-report-body></tbody></table><div class="empty-state" data-report-empty hidden><span>♡</span><b>No intervention reports recorded yet</b></div></div>
       <div class="table-foot"><span>Saved in this browser only</span></div>
     </section>
-    <p class="prototype-callout"><b>Prototype note:</b> Interventions are stored in local browser storage only. Not for clinical use.</p>
+    <p class="prototype-callout"><b>Prototype note:</b> Sample data only; not for clinical use. Report values and flags are entered as reported, not automatically interpreted.</p>
   </main>
   <footer class="app-footer"><span>© 2026 MediPulse · Demonstration prototype</span><span>Sample data only · Not for clinical use</span></footer>
   <div class="toast-region" aria-live="polite"></div>
